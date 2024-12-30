@@ -2,6 +2,6 @@ aiogram==2.25.1
 aiohttp==3.8.5
 aiosqlite==0.19.0
 APScheduler==3.10.1
-environs==9.5.0
+environs==11.2.1
 Pillow==10.0.0
 tzlocal==5.0.1
