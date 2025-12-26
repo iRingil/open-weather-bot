@@ -7,8 +7,8 @@ After=network.target
 User=tgbot
 Group=tgbot
 Type=simple
-WorkingDirectory=/opt/OpenWeatherBot
-ExecStart=/opt/OpenWeatherBot/venv/bin/python /opt/OpenWeatherBot/bot.py
+WorkingDirectory=/opt/open-weather-bot
+ExecStart=/opt/open-weather-bot/venv/bin/python /opt/open-weather-bot/bot.py
 Restart=always
 
 [Install]

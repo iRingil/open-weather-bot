@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you have discovered a security vulnerability in our project, please report it to us privately by emailing us at **[e.ringil@proton.me](mailto:e.ringil@proton.me)**. Please do not create a public thread on GitHub for this vulnerability.
+If you have discovered a security vulnerability in our project, please report it to us privately by emailing us at **[i.ringil@proton.me](mailto:i.ringil@proton.me)**. Please do not create a public thread on GitHub for this vulnerability.
 
 When reporting a vulnerability, please provide as much information as possible, including:
 

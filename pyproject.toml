@@ -64,13 +64,30 @@ logging-modules = ["logging"]
 
 [tool.pylint."messages control"]
 confidence = ["HIGH", "CONTROL_FLOW", "INFERENCE", "INFERENCE_FAILURE", "UNDEFINED"]
-disable = ["raw-checker-failed", "bad-inline-option", "locally-disabled", "file-ignored", "suppressed-message",
-    "useless-suppression", "deprecated-pragma", "use-symbolic-message-instead", "arguments-differ"]
+disable = [
+    "arguments-differ",
+    "bad-inline-option",
+    "deprecated-pragma",
+    "file-ignored",
+    "locally-disabled",
+    "raw-checker-failed",
+    "suppressed-message",
+    "use-symbolic-message-instead",
+    "useless-suppression",
+]
 enable = ["c-extension-no-member"]
 
 [tool.pylint.method_args]
-timeout-methods = ["requests.api.delete", "requests.api.get", "requests.api.head", "requests.api.options",
-    "requests.api.patch", "requests.api.post", "requests.api.put", "requests.api.request"]
+timeout-methods = [
+    "requests.api.delete",
+    "requests.api.get",
+    "requests.api.head",
+    "requests.api.options",
+    "requests.api.patch",
+    "requests.api.post",
+    "requests.api.put",
+    "requests.api.request",
+]
 
 [tool.pylint.miscellaneous]
 notes = ["FIXME", "XXX", "TODO"]
@@ -99,8 +116,12 @@ spelling-ignore-comment-directives = "fmt: on,fmt: off,noqa:,noqa,nosec,isort:sk
 contextmanager-decorators = ["contextlib.contextmanager"]
 ignore-none = true
 ignore-on-opaque-inference = true
-ignored-checks-for-mixins = ["no-member", "not-async-context-manager", "not-context-manager",
-    "attribute-defined-outside-init"]
+ignored-checks-for-mixins = [
+    "attribute-defined-outside-init",
+    "no-member",
+    "not-async-context-manager",
+    "not-context-manager",
+]
 ignored-classes = ["optparse.Values", "thread._local", "_thread._local", "argparse.Namespace"]
 missing-member-hint = true
 missing-member-hint-distance = 1

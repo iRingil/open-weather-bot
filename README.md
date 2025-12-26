@@ -3,48 +3,54 @@
 </p>
 
 <p align="center">
-    <a href="https://www.python.org/downloads/release/python-3108/">
-        <img src="https://img.shields.io/badge/python-v3.10-informational" alt="python version">
+    <a href="https://www.python.org/downloads/release/python-3119/">
+        <img src="https://img.shields.io/badge/python-v3.11-informational" alt="python version">
     </a>
-    <a href="https://pypi.org/project/aiogram/2.25.1/">
-        <img src="https://img.shields.io/badge/aiogram-v2.25.1-informational" alt="aiogram version">
+    <a href="https://pypi.org/project/aiogram/2.25.2/">
+        <img src="https://img.shields.io/badge/aiogram-v2.25.2-informational" alt="aiogram version">
     </a>
-    <a href="https://pypi.org/project/aiohttp/3.8.3/">
-        <img src="https://img.shields.io/badge/aiohttp-v3.8.3-informational" alt="aiohttp version">
+    <a href="https://pypi.org/project/aiohttp/3.8.6/">
+        <img src="https://img.shields.io/badge/aiohttp-v3.8.6-informational" alt="aiohttp version">
     </a>
-    <a href="https://pypi.org/project/aiosqlite/0.19.0/">
-        <img src="https://img.shields.io/badge/aiosqlite-v0.19.0-informational" alt="aiosqlite version">
+    <a href="https://pypi.org/project/aioredis/1.3.1/">
+        <img src="https://img.shields.io/badge/aioredis-v1.3.1-informational" alt="aioredis version">
     </a>
-    <a href="https://pypi.org/project/APScheduler/3.10.1/">
-        <img src="https://img.shields.io/badge/APScheduler-v3.10.1-informational" alt="APScheduler version">
+    <a href="https://pypi.org/project/asyncpg/0.31.0/">
+        <img src="https://img.shields.io/badge/asyncpg-v0.31.0-informational" alt="asyncpg version">
     </a>
-    <a href="https://pypi.org/project/environs/9.5.0/">
-        <img src="https://img.shields.io/badge/environs-v9.5.0-informational" alt="environs version">
+    <a href="https://pypi.org/project/APScheduler/3.11.2/">
+        <img src="https://img.shields.io/badge/APScheduler-v3.11.2-informational" alt="APScheduler version">
     </a>
-    <a href="https://pypi.org/project/Pillow/10.0.0/">
-        <img src="https://img.shields.io/badge/Pillow-v10.0.0-informational" alt="Pillow version">
+    <a href="https://pypi.org/project/environs/14.5.0/">
+        <img src="https://img.shields.io/badge/environs-v14.5.0-informational" alt="environs version">
     </a>
-    <a href="https://pypi.org/project/tzlocal/5.0.1/">
-        <img src="https://img.shields.io/badge/tzlocal-v5.0.1-informational" alt="tzlocal version">
+    <a href="https://pypi.org/project/Pillow/12.0.0/">
+        <img src="https://img.shields.io/badge/Pillow-v12.0.0-informational" alt="Pillow version">
     </a>
+    <a href="https://pypi.org/project/tzlocal/5.3.1/">
+        <img src="https://img.shields.io/badge/tzlocal-5.3.1-informational" alt="tzlocal version">
+    </a>
+</p>
+
+<p align="center">
     <a href="https://github.com/psf/black">
         <img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-black.svg">
     </a>
-    <a href="https://github.com/rin-gil/OpenWeatherBot/actions/workflows/tests.yml">
-        <img src="https://github.com/rin-gil/OpenWeatherBot/actions/workflows/tests.yml/badge.svg" alt="Code tests">
+    <a href="https://github.com/rin-gil/open-weather-bot/actions/workflows/tests.yml">
+        <img src="https://github.com/rin-gil/open-weather-bot/actions/workflows/tests.yml/badge.svg" alt="Linter">
     </a>
-    <a href="https://github.com/rin-gil/OpenWeatherBot/actions/workflows/codeql.yml">
-        <img src="https://github.com/rin-gil/OpenWeatherBot/actions/workflows/codeql.yml/badge.svg" alt="Code tests">
+    <a href="https://github.com/rin-gil/open-weather-bot/actions/workflows/codeql.yml">
+        <img src="https://github.com/rin-gil/open-weather-bot/actions/workflows/codeql.yml/badge.svg" alt="CodeQL">
     </a>
-    <a href="https://github.com/rin-gil/OpenWeatherBot/blob/master/LICENCE">
+    <a href="https://github.com/rin-gil/open-weather-bot/blob/master/LICENCE.md">
         <img src="https://img.shields.io/badge/licence-MIT-success" alt="MIT licence">
     </a>
 </p>
 
 <p align="right">
-    <a href="https://github.com/rin-gil/OpenWeatherBot/blob/master/README.ru.md">
+    <a href="https://github.com/rin-gil/open-weather-bot/blob/master/README.ruiRingil">
         <img src="https://raw.githubusercontent.com/rin-gil/rin-gil/main/assets/img/icons/flags/russia_24x24.png" alt="Ru"></a>
-    <a href="https://github.com/rin-gil/OpenWeatherBot/blob/master/README.ua.md">
+    <a href="https://github.com/rin-gil/open-weather-bot/blob/master/README.uaiRingil">
         <img src="https://raw.githubusercontent.com/rin-gil/rin-gil/main/assets/img/icons/flags/ukraine_24x24.png" alt="Ua">
     </a>
 </p>
@@ -63,15 +69,15 @@ The working version is available at [@OpenWeatherSmartBot](https://t.me/OpenWeat
 ### Installation
 
 ```
-git clone https://github.com/rin-gil/OpenWeatherBot.git
-cd OpenWeatherBot
+git clone https://github.com/rin-gil/open-weather-bot.git
+cd open-weather-bot
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 mv .env.dist .env
 ```
 
-<img align="right" width="300" src="https://raw.githubusercontent.com/rin-gil/rin-gil/main/assets/img/projects/OpenWeatherBot/screenshot_en.png" alt="OpenWeatherBot home screen">
+<img align="right" width="300" src="https://raw.githubusercontent.com/iRingil/iRingil/refs/heads/main/assets/img/projects/OpenWeatherBot/screenshot_en.png" alt="open-weather-bot home screen">
 
 ### Setup and run
 
@@ -103,7 +109,7 @@ mv .env.dist .env
   translation files for all localizations:
   1. extract strings to be translated from the code:
 
-     `pybabel extract --input-dirs=./tgbot --output-file=tgbot/locales/tgbot.pot --sort-by-file --project=OpenWeatherBot`
+     `pybabel extract --input-dirs=./tgbot --output-file=tgbot/locales/tgbot.pot --sort-by-file --project=open-weather-bot`
   2. create translation files for all localizations:
 
      `pybabel init --input-file=tgbot/locales/tgbot.pot --output-dir=tgbot/locales --domain=tgbot --locale={language}`
@@ -114,10 +120,10 @@ mv .env.dist .env
 
 ### Developers
 
-* [Ringil](https://github.com/rin-gil)
+* [Ringil](https://github.com/iRingil)
 
 ### Licenses
 
-* The source code of **Open Weather Bot** is available under the [MIT](https://github.com/rin-gil/OpenWeatherBot/blob/master/LICENCE) license
+* The source code of **Open Weather Bot** is available under the [MIT](https://github.com/rin-gil/open-weather-bot/blob/master/LICENCEiRingil) license
 * Weather data provided by [OpenWeather](https://openweathermap.org/)
 * Weather icons by [www.wishforge.games](https://freeicons.io/profile/2257) on [freeicons.io](https://freeicons.io/)
