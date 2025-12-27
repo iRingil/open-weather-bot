@@ -1,5 +1,6 @@
 """Module for getting weather information."""
 
+from asyncio import to_thread
 from pathlib import Path
 
 from aiogram.types import Location
@@ -138,10 +139,11 @@ class WeatherAPI:
                 raw_data=raw_data, units=user_settings.units
             )
             if weather_forecast_data:
-                forecast_image: Path = self._image.draw_image(data=weather_forecast_data, user_id=user_id)
+                forecast_image: Path = await to_thread(
+                    self._image.draw_image, data=weather_forecast_data, user_id=user_id
+                )
                 return forecast_image
-        forecast_image = BOT_LOGO
-        return forecast_image
+        return BOT_LOGO  # Return bot logo if image generate fails
 
 
 weather: WeatherAPI = WeatherAPI(token=load_config().weather_api.token)
