@@ -6,15 +6,26 @@ from aiogram.utils.exceptions import TelegramAPIError
 
 from tgbot.misc.logger import logger
 
+__all__: tuple[str] = ("register_errors_handlers",)
 
-async def errors_handler(update: Update, exception: TelegramAPIError) -> bool:
-    """Logs exceptions that have occurred and are not handled by other functions"""
-    logger.error(
-        "When processing the update with id=%s there was a unhandled error: %s", update.update_id, repr(exception)
-    )
+
+async def _errors_handler(update: Update, exception: TelegramAPIError) -> bool:
+    """
+    Logs exceptions that have occurred and are not handled by other functions.
+
+    :param update: Aiogram update object.
+    :param exception: Telegram exception.
+    :return: Always returns True.
+    """
+    logger.error("Unexpected error while processing the update: %s", repr(exception))
     return True
 
 
 def register_errors_handlers(dp: Dispatcher) -> None:
-    """Registers errors handlers"""
-    dp.register_errors_handler(errors_handler)
+    """
+    Registers errors handlers.
+
+    :param dp: Aiogram dispatcher object.
+    :return: None
+    """
+    dp.register_errors_handler(callback=_errors_handler)
