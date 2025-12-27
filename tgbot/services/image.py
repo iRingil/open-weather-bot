@@ -3,7 +3,6 @@
 from dataclasses import dataclass
 from os import makedirs, path
 from pathlib import Path
-from typing import Any
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -148,7 +147,7 @@ class DrawWeatherImage:
 
         if 24 >= temp >= 0 or temp <= -21:
             return "#000000"
-        return "#FFFFFF"
+        return "#ffffff"
 
     @staticmethod
     def _get_color_of_text_wind(wind_speed: str) -> str:
@@ -165,7 +164,7 @@ class DrawWeatherImage:
 
         if 99 >= speed >= 40:
             return "#000000"
-        return "#FFFFFF"
+        return "#ffffff"
 
     @staticmethod
     def _invert_image_color(image: Image.Image) -> Image.Image:
@@ -175,15 +174,9 @@ class DrawWeatherImage:
         :param image: Image.Image object.
         :return: Image.Image object with inverted colors.
         """
-        pixel_data: Any | None = image.load()
-        size_x, size_y = image.size
-        for pos_y in range(size_y):
-            for pos_x in range(size_x):
-                if pixel_data:
-                    alpha = pixel_data[pos_x, pos_y][3]
-                    if alpha:
-                        pixel_data[pos_x, pos_y] = (255, 255, 255, alpha)
-        return image
+        white_image: Image.Image = Image.new(mode="RGBA", size=image.size, color="#ffffff")
+        white_image.putalpha(alpha=image.getchannel("A"))
+        return white_image
 
     # endregion
 
@@ -236,7 +229,7 @@ class DrawWeatherImage:
             cursor.pos_y = 50
             file_path: str = path.join(self._ICONS_DIR, f"{ico_code[idx]}.png")
             weather_icon: Image.Image = Image.open(fp=file_path, mode="r", formats=("PNG",))
-            if color_of_text == "#FFFFFF":
+            if color_of_text == "#ffffff":
                 weather_icon = self._invert_image_color(image=weather_icon)
             canvas.alpha_composite(im=weather_icon, dest=(cursor.pos_x + 17, cursor.pos_y))
             weather_icon.close()

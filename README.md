@@ -27,9 +27,6 @@
     <a href="https://pypi.org/project/Pillow/12.0.0/">
         <img src="https://img.shields.io/badge/Pillow-v12.0.0-informational" alt="Pillow version">
     </a>
-    <a href="https://pypi.org/project/tzlocal/5.3.1/">
-        <img src="https://img.shields.io/badge/tzlocal-5.3.1-informational" alt="tzlocal version">
-    </a>
 </p>
 
 <p align="center">
