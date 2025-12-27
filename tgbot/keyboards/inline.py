@@ -1,4 +1,4 @@
-"""Creates inline keyboards for dialogs with the bot"""
+"""Creates inline keyboards for dialogs with the bot."""
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
