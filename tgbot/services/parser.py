@@ -1,4 +1,4 @@
-"""Parses raw data on weather with OpenWeatherAPI"""
+"""Parses raw data on weather with OpenWeatherAPI."""
 
 from datetime import datetime, timedelta
 
@@ -7,13 +7,21 @@ from tzlocal import get_localzone
 from tgbot.misc.logger import logger
 from tgbot.services.classes import CityData, CurrentWeatherData, ForecastData
 
+__all__: tuple[str] = ("ParseWeather",)
+
 
 class ParseWeather:
-    """A class for parsing data with OpenWeatherAPI"""
+    """A class for parsing data with OpenWeatherAPI."""
 
     @staticmethod
     async def parse_city_data(raw_data: dict, lang_code: str) -> CityData | None:
-        """Parses city data from OpenWeatherAPI response"""
+        """
+        Parses city data from OpenWeatherAPI response.
+
+        :param raw_data: Raw city data from OpenWeatherAPI.
+        :param lang_code: User language code.
+        :return: Parsed city data as CityData object or None in case of error.
+        """
         try:
             name: str = raw_data["name"]
             state: str | None = raw_data.get("state")
@@ -35,7 +43,12 @@ class ParseWeather:
 
     @staticmethod
     async def parse_current_weather(raw_data: dict) -> CurrentWeatherData | None:
-        """Parses current weather data from OpenWeatherAPI response"""
+        """
+        Parses current weather data from OpenWeatherAPI response.
+
+        :param raw_data: Raw weather data from OpenWeatherAPI.
+        :return: Parsed weather data as CurrentWeatherData object or None in case of error.
+        """
         try:
             temp: int = round(raw_data["main"]["temp"])
             feels_like: int = round(raw_data["main"]["feels_like"])
@@ -45,7 +58,7 @@ class ParseWeather:
             gust: int | None = round(raw_data["wind"]["gust"]) if raw_data["wind"].get("gust") else None
             humidity: int = raw_data["main"]["humidity"]
             pressure: int = raw_data["main"]["pressure"]
-            visibility: float = round(raw_data["visibility"] / 1000, 1)
+            visibility: float | None = round(raw_data["visibility"] / 1000, 1) if raw_data.get("visibility") else None
             if raw_data.get("snow"):
                 precipitation: float | None = raw_data["snow"]["1h"]
             elif raw_data.get("rain"):
@@ -81,7 +94,13 @@ class ParseWeather:
 
     @staticmethod
     async def parse_weather_forecast(raw_data: dict, units: str) -> ForecastData | None:
-        """Parses weather forecast data from OpenWeatherAPI response"""
+        """
+        Parses weather forecast data from OpenWeatherAPI response.
+
+        :param raw_data: Raw forecast data from OpenWeatherAPI.
+        :param units: Measurement units ('metric' or 'imperial')
+        :return: Parsed forecast data as ForecastData object or None in case of error.
+        """
         time: list[str] = []
         ico_code: list[str] = []
         temp: list[str] = []
