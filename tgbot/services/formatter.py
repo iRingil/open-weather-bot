@@ -1,23 +1,28 @@
-"""Formats weather data into the required view"""
+"""Formats weather data into the required view."""
 
 from math import log
 
 from tgbot.middlewares.localization import i18n
 from tgbot.services.classes import CurrentWeatherData
 
+__all__: tuple[str] = ("FormatWeather",)
 
 _ = i18n.gettext  # Alias for gettext method
 
 
 class FormatWeather:
-    """A class for formatting weather data"""
+    """A class for formatting weather data."""
 
     @staticmethod
-    async def correct_user_input(city_name: str) -> str:
-        """Removes everything from the city_name except letters, spaces and hyphens"""
+    async def correct_user_input(raw_city_name: str) -> str:
+        """
+        Removes everything from the city_name except letters, spaces and hyphens.
+
+        :param raw_city_name: Raw city name, inputted by user.
+        :return: Formated city name.
+        """
         processed_string: str = ""
-        # cut city_name to 72, because this is max length of the city name
-        for char in city_name[:72]:
+        for char in raw_city_name[:72]:  # Cut raw_city_name to 72, because this is max length of the city name
             if char.isalpha() or char == "-":
                 processed_string += char
             elif char.isspace() and (not processed_string or not processed_string[-1].isspace()):
@@ -25,25 +30,30 @@ class FormatWeather:
         return processed_string
 
     @staticmethod
-    async def _get_weather_emoji(weather: int) -> str:
-        """Returns emoji by weather code from OpenWeatherMap"""
-        if weather in (800,):  # clear
+    async def _get_weather_emoji(weather_code: int) -> str:
+        """
+        Returns emoji by weather code from OpenWeatherMap.
+
+        :param weather_code: Weather code.
+        :return: Corresponding emoji.
+        """
+        if weather_code in (800,):  # clear
             weather_emoji: str = "☀"
-        elif weather in (801,):  # light clouds
+        elif weather_code in (801,):  # light clouds
             weather_emoji = "🌤"
-        elif weather in (803, 804):  # clouds
+        elif weather_code in (803, 804):  # clouds
             weather_emoji = "🌥"
-        elif weather in (802,):  # scattered clouds
+        elif weather_code in (802,):  # scattered clouds
             weather_emoji = "☁"
-        elif weather in (500, 501, 502, 503, 504):  # rain
+        elif weather_code in (500, 501, 502, 503, 504):  # rain
             weather_emoji = "🌦"
-        elif weather in (300, 301, 302, 310, 311, 312, 313, 314, 321, 520, 521, 522, 531):  # drizzle
+        elif weather_code in (300, 301, 302, 310, 311, 312, 313, 314, 321, 520, 521, 522, 531):  # drizzle
             weather_emoji = "🌧"
-        elif weather in (200, 201, 202, 210, 211, 212, 221, 230, 231, 232):  # thunderstorm
+        elif weather_code in (200, 201, 202, 210, 211, 212, 221, 230, 231, 232):  # thunderstorm
             weather_emoji = "⛈"
-        elif weather in (511, 600, 601, 602, 611, 612, 613, 615, 616, 620, 621, 622):  # snow
+        elif weather_code in (511, 600, 601, 602, 611, 612, 613, 615, 616, 620, 621, 622):  # snow
             weather_emoji = "🌨"
-        elif weather in (701, 711, 721, 731, 741, 751, 761, 762, 771, 781):  # atmosphere
+        elif weather_code in (701, 711, 721, 731, 741, 751, 761, 762, 771, 781):  # atmosphere
             weather_emoji = "🌫"
         else:  # default
             weather_emoji = "🌀"
@@ -51,34 +61,65 @@ class FormatWeather:
 
     @staticmethod
     async def _calculate_dew_point(temp: int, humidity: int) -> int:
-        """Calculates the surface temperature at which condensation occurs (dew point)"""
+        """
+        Calculates the surface temperature at which condensation occurs (dew point).
+
+        :param temp: Temperature.
+        :param humidity: Humidity.
+        :return:
+        """
         const_a: float = 17.27
         const_b: float = 237.7
-
-        def func():  # type: ignore
-            return (const_a * temp) / (const_b + temp) + log(humidity / 100)
-
-        return round((const_b * func()) / (const_a - func()))  # type: ignore
+        gamma: float = (const_a * temp) / (const_b + temp) + log(humidity / 100)
+        return round((const_b * gamma) / (const_a - gamma))
 
     async def format_current_weather(
         self, weather_data: CurrentWeatherData, units: str, city: str, lang_code: str
     ) -> str:
-        """Returns the current weather data in the desired form"""
-        emoji = await self._get_weather_emoji(weather=weather_data.weather_code)
-        temp_units: str = "°C" if units == "metric" else "°F"
-        wind_units: str = "m/s" if units == "metric" else "mph"
-        dew_point: int = await self._calculate_dew_point(temp=weather_data.temp, humidity=weather_data.humidity)
+        """
+        Returns the current weather data in the desired form.
 
-        if weather_data.precipitation:
-            precipitation: str = (
-                f", <b>{weather_data.precipitation} mm </b>" + _("of precipitation in one hour", locale=lang_code) + ""
+        :param weather_data: CurrentWeatherData object.
+        :param units: Weather measure units.
+        :param city: Current city.
+        :param lang_code: User language code.
+        :return: Formatted weather data.
+        """
+        # Defining measurement unit signatures
+        if units == "metric":
+            temp_units: str = "°C"
+            wind_units: str = "m/s"
+            precip_units: str = "mm"
+            vis_units: str = "km"
+        else:
+            temp_units = "°F"
+            wind_units = "mph"
+            precip_units = "in"
+            vis_units = "mi"
+        # Obtaining required values
+        emoji: str = await self._get_weather_emoji(weather_code=weather_data.weather_code)
+        dew_point: int = await self._calculate_dew_point(temp=weather_data.temp, humidity=weather_data.humidity)
+        # Obtaining optional values
+        precipitation: str = (
+            (
+                f", <b>{weather_data.precipitation} {precip_units} </b>"
+                + _("of precipitation in one hour", locale=lang_code)
+                + ""
             )
-        else:
-            precipitation = ""
-        if weather_data.gust:
-            wind_gust: str = ", " + _("gusts to", locale=lang_code) + f": <b>{weather_data.gust} {wind_units}</b>"
-        else:
-            wind_gust = ""
+            if weather_data.precipitation
+            else ""
+        )
+        wind_gust: str = (
+            ", " + _("gusts to", locale=lang_code) + f": <b>{weather_data.gust} {wind_units}</b>"
+            if weather_data.gust
+            else ""
+        )
+        visibility: str = (
+            ("🌫️ " + _("Visibility", locale=lang_code) + f": <b>{weather_data.visibility} {vis_units}</b>\n\n")
+            if weather_data.visibility
+            else ""
+        )
+        # Forming the final string with weather information
         current_weather: str = (
             f"<b>{city}, {weather_data.time}</b>\n"
             + f"{emoji} {weather_data.weather_description}{precipitation}\n\n"
@@ -96,9 +137,7 @@ class FormatWeather:
             + "🌡 "
             + _("Pressure", locale=lang_code)
             + f": <b>{weather_data.pressure} hPa</b>\n"
-            + "🌫️ "
-            + _("Visibility", locale=lang_code)
-            + f": <b>{weather_data.visibility} km</b>\n\n"
+            + f"{visibility}"
             + "🌅 "
             + _("Sunrise", locale=lang_code)
             + f": <b>{weather_data.sunrise}</b>  🌇 "
