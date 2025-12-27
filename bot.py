@@ -53,38 +53,6 @@ def _register_all_handlers(dp: Dispatcher) -> None:
     register_errors_handlers(dp=dp)
 
 
-async def _on_startup(bot: Bot, dp: Dispatcher) -> None:
-    """
-    Performs actions on bot startup.
-
-    :param bot: Aiogram bot instance.
-    :param dp: Aiogram dispatcher instance.
-    :return: None
-    """
-    await database.init()
-    await set_default_commands(dp=dp)
-    await schedule(dp=dp)
-    config: Config = bot["config"]
-    await bot.set_webhook(
-        url=f"{config.tg_bot.webhook.wh_host}/{config.tg_bot.webhook.wh_path}",
-        secret_token=config.tg_bot.webhook.wh_token,
-    )
-
-
-async def _on_shutdown(bot: Bot, dp: Dispatcher) -> None:
-    """
-    Performs actions on bot shutdown.
-
-    :param bot: Aiogram bot instance.
-    :param dp: Aiogram dispatcher instance.
-    :return: None
-    """
-    await dp.storage.close()
-    await dp.storage.wait_closed()
-    session: ClientSession = await bot.get_session()
-    await session.close()
-
-
 def main() -> None:
     """
     Launches the bot.
@@ -100,11 +68,39 @@ def main() -> None:
     _register_all_filters(dp=dp)
     _register_all_handlers(dp=dp)
 
+    async def on_startup(dp_: Dispatcher) -> None:
+        """
+        Performs actions on bot startup.
+
+        :param dp_: Aiogram dispatcher instance.
+        :return: None
+        """
+        await database.create_tables()
+        await set_default_commands(dp=dp_)
+        await schedule(dp=dp_)
+        await bot.set_webhook(
+            url=f"{config.tg_bot.webhook.wh_host}/{config.tg_bot.webhook.wh_path}",
+            secret_token=config.tg_bot.webhook.wh_token,
+        )
+
+    async def on_shutdown(dp_: Dispatcher) -> None:
+        """
+        Performs actions on bot shutdown.
+
+        :param dp_: Aiogram dispatcher instance.
+        :return: None
+        """
+        await dp_.storage.close()
+        await dp_.storage.wait_closed()
+        await database.close()
+        session: ClientSession = await bot.get_session()
+        await session.close()
+
     start_webhook(
         dispatcher=dp,
-        webhook_path=config.tg_bot.webhook.wh_path,
-        on_startup=_on_startup,
-        on_shutdown=_on_shutdown,
+        webhook_path=f"/{config.tg_bot.webhook.wh_path}",
+        on_startup=on_startup,
+        on_shutdown=on_shutdown,
         skip_updates=True,
         host=config.tg_bot.webhook.app_host,
         port=config.tg_bot.webhook.app_port,
