@@ -1,4 +1,4 @@
-"""Message handlers for administrators"""
+"""Message handlers for administrators."""
 
 from asyncio import sleep
 
