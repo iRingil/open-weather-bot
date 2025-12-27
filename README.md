@@ -12,8 +12,8 @@
     <a href="https://pypi.org/project/aiohttp/3.8.6/">
         <img src="https://img.shields.io/badge/aiohttp-v3.8.6-informational" alt="aiohttp version">
     </a>
-    <a href="https://pypi.org/project/aioredis/1.3.1/">
-        <img src="https://img.shields.io/badge/aioredis-v1.3.1-informational" alt="aioredis version">
+    <a href="https://pypi.org/project/redis/7.1.0/">
+        <img src="https://img.shields.io/badge/redis-v7.1.0-informational" alt="redis version">
     </a>
     <a href="https://pypi.org/project/asyncpg/0.31.0/">
         <img src="https://img.shields.io/badge/asyncpg-v0.31.0-informational" alt="asyncpg version">
