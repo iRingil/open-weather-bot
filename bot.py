@@ -101,7 +101,7 @@ def main() -> None:
         webhook_path=f"/{config.tg_bot.webhook.wh_path}",
         on_startup=on_startup,
         on_shutdown=on_shutdown,
-        skip_updates=True,
+        skip_updates=False,
         host=config.tg_bot.webhook.app_host,
         port=config.tg_bot.webhook.app_port,
     )
