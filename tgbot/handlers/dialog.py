@@ -26,12 +26,12 @@ from tgbot.services.classes import CityData
 from tgbot.services.database import database
 from tgbot.services.weather import weather
 
-__all__: tuple[str] = ("register_dialog_handlers",)
+__all__: tuple[str] = ("delete_previous_dialog_message", "register_dialog_handlers")
 
 _ = i18n.gettext  # Alias for gettext method
 
 
-async def _delete_previous_dialog_message(obj: Message | CallbackQuery) -> None:
+async def delete_previous_dialog_message(obj: Message | CallbackQuery) -> None:
     """
     Deletes the previous dialog message, if it exists.
 
@@ -64,7 +64,7 @@ async def _dialog_start(message: Message, state: FSMContext) -> None:
     await state.reset_state()
     user_lang_code: str = message.from_user.language_code
     user_id: int = message.from_user.id
-    await _delete_previous_dialog_message(obj=message)
+    await delete_previous_dialog_message(obj=message)
     await database.delete_user(user_id=message.from_user.id)
     dialog_text: str = (
         _("Let's set the weather!", locale=user_lang_code)
@@ -89,7 +89,7 @@ async def _dialog_select_city(message: Message) -> None:
     """
     user_lang_code: str = message.from_user.language_code
     user_id: int = message.from_user.id
-    await _delete_previous_dialog_message(obj=message)
+    await delete_previous_dialog_message(obj=message)
     await WeatherSetupDialog.previous()  # Block user input while city search is being processed
     if message.content_type in (ContentType.LOCATION, ContentType.VENUE):  # If the user sent geolocation
         list_found_cities: list[CityData] | None = await weather.get_list_cities(
@@ -125,7 +125,7 @@ async def _dialog_select_another_city(call: CallbackQuery) -> None:
     :return: None
     """
     user_lang_code: str = call.from_user.language_code
-    await _delete_previous_dialog_message(obj=call)
+    await delete_previous_dialog_message(obj=call)
     dialog: Message = await call.message.answer_photo(
         photo=InputFile(path_or_bytesio=BOT_LOGO),
         caption=_("Write the name of the city or send your coordinates:", locale=user_lang_code),
@@ -143,7 +143,7 @@ async def _dialog_select_measure_units(call: CallbackQuery) -> None:
     :return: None
     """
     user_id: int = call.from_user.id
-    await _delete_previous_dialog_message(obj=call)
+    await delete_previous_dialog_message(obj=call)
     dialog: Message = await call.message.answer_photo(
         photo=InputFile(path_or_bytesio=BOT_LOGO),
         caption="🌡 " + _("Choose units of temperature measurement:", locale=call.from_user.language_code),
@@ -164,7 +164,7 @@ async def _dialog_finish(call: CallbackQuery, state: FSMContext) -> None:
     """
     user_lang_code: str = call.from_user.language_code
     user_id: int = call.from_user.id
-    await _delete_previous_dialog_message(obj=call)
+    await delete_previous_dialog_message(obj=call)
     measure_units: str = "metric" if call.data.removeprefix("units=") == "c" else "imperial"
     await database.save_user_settings(user_id=user_id, lang_code=user_lang_code, measure_units=measure_units)
     weather_forecast: Path = await weather.get_weather_forecast(user_id=user_id)
