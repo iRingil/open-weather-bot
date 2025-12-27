@@ -5,7 +5,6 @@ from aiogram.types import CallbackQuery, Message
 
 from tgbot.config import Config
 
-
 __all__: tuple[str] = ("AdminFilter",)
 
 
