@@ -26,7 +26,7 @@ from tgbot.services.classes import CityData
 from tgbot.services.database import database
 from tgbot.services.weather import weather
 
-__all__: tuple[str] = ("delete_previous_dialog_message", "register_dialog_handlers")
+__all__: tuple[str, ...] = ("delete_previous_dialog_message", "register_dialog_handlers")
 
 _ = i18n.gettext  # Alias for gettext method
 
@@ -171,7 +171,7 @@ async def _dialog_finish(call: CallbackQuery, state: FSMContext) -> None:
     dialog: Message = await call.message.answer_photo(
         photo=InputFile(path_or_bytesio=weather_forecast), caption=await weather.get_current_weather(user_id=user_id)
     )
-    if str(weather_forecast)[-12:-4] != "bot_logo":
+    if not str(weather_forecast).endswith("bot_logo.png"):
         os_remove(path=weather_forecast)
     await database.save_dialog_id(user_id=user_id, dialog_id=dialog.message_id)
     final_message_text: str = (
