@@ -1,4 +1,4 @@
-"""Handles errors"""
+"""Handles errors."""
 
 from aiogram import Dispatcher
 from aiogram.types import Update

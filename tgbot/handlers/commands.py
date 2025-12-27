@@ -1,4 +1,4 @@
-"""Other message handlers"""
+"""Other message handlers."""
 
 from asyncio import sleep
 
