@@ -8,9 +8,9 @@ from aiohttp import ClientSession
 from tgbot.config import Config, load_config
 from tgbot.filters.admin import AdminFilter
 from tgbot.handlers.admin import register_admin_handlers
+from tgbot.handlers.commands import register_other_handlers
 from tgbot.handlers.dialog import register_dialog_handlers
 from tgbot.handlers.error import register_errors_handlers
-from tgbot.handlers.other import register_other_handlers
 from tgbot.middlewares.localization import i18n
 from tgbot.misc.commands import set_default_commands
 from tgbot.misc.logger import logger
