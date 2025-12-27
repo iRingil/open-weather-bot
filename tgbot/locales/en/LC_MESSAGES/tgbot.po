@@ -1,16 +1,15 @@
 # English translations for OpenWeatherBot.
-# Copyright (C) 2022 Ringil
-# This file is distributed under the same license as the OpenWeatherBot
-# project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2022.
+# Copyright (C) 2025 Ringil
+# This file is distributed under the same license as the OpenWeatherBot project.
+# Ringil <i.ringil@proton.me>, 2025.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: OpenWeatherBot v1.1.0\n"
-"Report-Msgid-Bugs-To: noreply@domain.com\n"
-"POT-Creation-Date: 2022-11-29 23:55+0200\n"
-"PO-Revision-Date: 2022-11-29 23:56+0200\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Project-Id-Version: open-weather-bot VERSION\n"
+"Report-Msgid-Bugs-To: i.ringil@proton.me\n"
+"POT-Creation-Date: 2025-12-27 10:55+0200\n"
+"PO-Revision-Date: 2025-12-27 10:58+0200\n"
+"Last-Translator: Ringil <i.ringil@proton.me>\n"
 "Language: en\n"
 "Language-Team: en <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
@@ -19,151 +18,142 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.9.1\n"
 
-#: tgbot/handlers/admin.py:24
+#: tgbot/handlers/admin.py:30
 msgid "Statistics"
 msgstr "Statistics"
 
-#: tgbot/handlers/admin.py:26
+#: tgbot/handlers/admin.py:32
 msgid "Since beginning of the month"
 msgstr "Since beginning of the month"
 
-#: tgbot/handlers/admin.py:28
+#: tgbot/handlers/admin.py:34
 msgid "requests have been spent"
 msgstr "requests have been spent"
 
-#: tgbot/handlers/admin.py:32
+#: tgbot/handlers/admin.py:38
 msgid "out of"
 msgstr "out of"
 
-#: tgbot/handlers/admin.py:34
+#: tgbot/handlers/admin.py:40
 msgid "Users in the database"
 msgstr "Users in the database"
 
-#: tgbot/handlers/dialog.py:47
-msgid "Let's set the weather!"
-msgstr "Let's set the weather!"
+#: tgbot/handlers/commands.py:30
+msgid "OpenWeatherBot is written in Python using the Aiogram 2 framework"
+msgstr "OpenWeatherBot is written in Python using the Aiogram 2 framework"
 
-#: tgbot/handlers/dialog.py:49 tgbot/handlers/dialog.py:102
-msgid "Write the name of the city or send your coordinates"
-msgstr "Write the name of the city or send your coordinates"
-
-#: tgbot/handlers/dialog.py:75
-msgid "Select the desired city"
-msgstr "Select the desired city"
-
-#: tgbot/handlers/dialog.py:82
-msgid "I couldn't find a single city!"
-msgstr "I couldn't find a single city!"
-
-#: tgbot/handlers/dialog.py:84
-msgid "Try changing the name of the city"
-msgstr "Try changing the name of the city"
-
-#: tgbot/handlers/dialog.py:117
-msgid "Choose units of temperature measurement"
-msgstr "Choose units of temperature measurement"
-
-#: tgbot/handlers/dialog.py:144
-msgid "The weather setup is complete"
-msgstr "The weather setup is complete"
-
-#: tgbot/handlers/dialog.py:146
-msgid "The data will be updated automatically every 3 hours"
-msgstr "The data will be updated automatically every 3 hours"
-
-#: tgbot/handlers/other.py:23
-msgid "is written in"
-msgstr "is written in"
-
-#: tgbot/handlers/other.py:25
-msgid "using the"
-msgstr "using the"
-
-#: tgbot/handlers/other.py:27
-msgid "library"
-msgstr "library"
-
-#: tgbot/handlers/other.py:29
+#: tgbot/handlers/commands.py:32
 msgid "Weather data provided by"
 msgstr "Weather data provided by"
 
-#: tgbot/handlers/other.py:31
+#: tgbot/handlers/commands.py:34
 msgid "Icon by"
 msgstr "Icon by"
 
-#: tgbot/handlers/other.py:33
+#: tgbot/handlers/commands.py:36
 msgid "on"
 msgstr "on"
 
-#: tgbot/handlers/other.py:35
+#: tgbot/handlers/commands.py:38
 msgid "The source code is available on"
 msgstr "The source code is available on"
 
-#: tgbot/handlers/other.py:51
+#: tgbot/handlers/commands.py:58
 msgid "All of your data has been deleted"
 msgstr "All of your data has been deleted"
 
-#: tgbot/keyboards/inline.py:24
-msgid "Select another city"
-msgstr "Select another city"
+#: tgbot/handlers/dialog.py:70
+msgid "Let's set the weather!"
+msgstr "Let's set the weather!"
 
-#: tgbot/keyboards/reply.py:14
+#: tgbot/handlers/dialog.py:72 tgbot/handlers/dialog.py:131
+msgid "Write the name of the city or send your coordinates:"
+msgstr "Write the name of the city or send your coordinates:"
+
+#: tgbot/handlers/dialog.py:101
+msgid "Select the desired city:"
+msgstr "Select the desired city:"
+
+#: tgbot/handlers/dialog.py:108
+msgid "I couldn't find a single city!"
+msgstr "I couldn't find a single city!"
+
+#: tgbot/handlers/dialog.py:110
+msgid "Try changing the name of the city:"
+msgstr "Try changing the name of the city:"
+
+#: tgbot/handlers/dialog.py:149
+msgid "Choose units of temperature measurement:"
+msgstr "Choose units of temperature measurement:"
+
+#: tgbot/handlers/dialog.py:179
+msgid "The weather setup is complete."
+msgstr "The weather setup is complete."
+
+#: tgbot/handlers/dialog.py:181
+msgid "The data will be updated automatically every 3 hours."
+msgstr "The data will be updated automatically every 3 hours."
+
+#: tgbot/keyboards/inline.py:29
+msgid "Select another city:"
+msgstr "Select another city:"
+
+#: tgbot/keyboards/reply.py:20
 msgid "Send geolocation"
 msgstr "Send geolocation"
 
-#: tgbot/misc/commands.py:17
+#: tgbot/misc/commands.py:23
 msgid "Set weather forecast"
 msgstr "Set weather forecast"
 
-#: tgbot/misc/commands.py:18
+#: tgbot/misc/commands.py:24
 msgid "Bot info"
 msgstr "Bot info"
 
-#: tgbot/misc/commands.py:19
+#: tgbot/misc/commands.py:25
 msgid "Stop bot and delete data"
 msgstr "Stop bot and delete data"
 
-#: tgbot/services/formatter.py:74
+#: tgbot/services/formatter.py:106
 msgid "of precipitation in one hour"
 msgstr "of precipitation in one hour"
 
-#: tgbot/services/formatter.py:79
+#: tgbot/services/formatter.py:113
 msgid "gusts to"
 msgstr "gusts to"
 
-#: tgbot/services/formatter.py:86
-msgid "feels like"
-msgstr "feels like"
-
-#: tgbot/services/formatter.py:89
-msgid "Humidity"
-msgstr "Humidity"
-
-#: tgbot/services/formatter.py:91
-msgid "Dew point"
-msgstr "Dew point"
-
-#: tgbot/services/formatter.py:94
-msgid "Wind speed"
-msgstr "Wind speed"
-
-#: tgbot/services/formatter.py:97
-msgid "Pressure"
-msgstr "Pressure"
-
-#: tgbot/services/formatter.py:100
+#: tgbot/services/formatter.py:118
 msgid "Visibility"
 msgstr "Visibility"
 
-#: tgbot/services/formatter.py:103
+#: tgbot/services/formatter.py:127
+msgid "feels like"
+msgstr "feels like"
+
+#: tgbot/services/formatter.py:130
+msgid "Humidity"
+msgstr "Humidity"
+
+#: tgbot/services/formatter.py:132
+msgid "Dew point"
+msgstr "Dew point"
+
+#: tgbot/services/formatter.py:135
+msgid "Wind speed"
+msgstr "Wind speed"
+
+#: tgbot/services/formatter.py:138
+msgid "Pressure"
+msgstr "Pressure"
+
+#: tgbot/services/formatter.py:142
 msgid "Sunrise"
 msgstr "Sunrise"
 
-#: tgbot/services/formatter.py:105
+#: tgbot/services/formatter.py:144
 msgid "Sunset"
 msgstr "Sunset"
 
-#: tgbot/services/weather.py:102
-msgid "Failed to obtain data about the current weather"
-msgstr "Failed to obtain data about the current weather"
-
+#: tgbot/services/weather.py:116
+msgid "Failed to obtain data about the current weather."
+msgstr "Failed to obtain data about the current weather."
