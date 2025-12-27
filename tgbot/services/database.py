@@ -3,6 +3,7 @@
 from datetime import datetime
 from typing import Any
 
+# pylint: disable=unused-import
 from asyncpg import Connection, Pool, Record, create_pool
 
 from tgbot.config import load_config

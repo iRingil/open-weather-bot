@@ -39,6 +39,7 @@ class ParseWeather:
             logger.error("Error when parsing city data: %s", ex)
         return None
 
+    # pylint: disable=too-many-locals
     @staticmethod
     async def parse_current_weather(raw_data: dict) -> CurrentWeatherData | None:
         """

@@ -9,6 +9,7 @@ from tgbot.misc.logger import logger
 __all__: tuple[str] = ("register_errors_handlers",)
 
 
+# pylint: disable=unused-argument
 async def _errors_handler(update: Update, exception: TelegramAPIError) -> bool:
     """
     Logs exceptions that have occurred and are not handled by other functions.

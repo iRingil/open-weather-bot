@@ -49,7 +49,7 @@ async def delete_previous_dialog_message(obj: Message | CallbackQuery) -> None:
     if dialog_id:
         try:
             await obj.bot.delete_message(chat_id=user_id, message_id=dialog_id)
-        except MessageCantBeDeleted | MessageToDeleteNotFound:
+        except (MessageCantBeDeleted, MessageToDeleteNotFound):
             pass
 
 
