@@ -48,7 +48,7 @@ async def _update_weather_data(dp: Dispatcher) -> None:
             await database.save_dialog_id(user_id=user.id, dialog_id=dialog.message_id)
         finally:
             await dp.bot.delete_message(chat_id=user.id, message_id=user.dialog_id)
-            if not str(weather_forecast).endswith("bot_logo.png"):
+            if not str(weather_forecast).endswith("bot_logo.jpg"):
                 os_remove(weather_forecast)
 
 

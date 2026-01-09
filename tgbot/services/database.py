@@ -10,7 +10,7 @@ from tgbot.config import load_config
 from tgbot.services.classes import User, UserWeatherSettings
 
 
-__all__: tuple[str, ...] = ("Database", "database")
+__all__: tuple[str, ...] = ("Database", "User", "database")
 
 
 class Database:

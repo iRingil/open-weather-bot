@@ -12,7 +12,7 @@ __all__: tuple[str, ...] = ("BASE_DIR", "BOT_LOGO", "LOCALES_DIR", "LOG_FILE", "
 BASE_DIR: Path = Path(__file__).resolve().parent.parent
 _USE_PG_SOCKET: bool = False
 _USE_REDIS_SOCKET: bool = False
-BOT_LOGO: Path = Path(BASE_DIR, "tgbot/assets/logo/bot_logo.png")
+BOT_LOGO: Path = Path(BASE_DIR, "tgbot/assets/logo/bot_logo.jpg")
 LOCALES_DIR: Path = Path(BASE_DIR, "tgbot/locales")
 LOG_FILE: Path = Path(BASE_DIR, "logs/open-weather-bot.log")
 

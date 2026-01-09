@@ -171,7 +171,7 @@ async def _dialog_finish(call: CallbackQuery, state: FSMContext) -> None:
     dialog: Message = await call.message.answer_photo(
         photo=InputFile(path_or_bytesio=weather_forecast), caption=await weather.get_current_weather(user_id=user_id)
     )
-    if not str(weather_forecast).endswith("bot_logo.png"):
+    if not str(weather_forecast).endswith("bot_logo.jpg"):
         os_remove(path=weather_forecast)
     await database.save_dialog_id(user_id=user_id, dialog_id=dialog.message_id)
     final_message_text: str = (
