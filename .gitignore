@@ -8,6 +8,7 @@
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries
 .idea/**/shelf
+.run
 
 # AWS User-specific
 .idea/**/aws.xml
@@ -215,3 +216,6 @@ logs/
 
 # Temp
 temp/
+
+# AI
+.claude
