@@ -1,0 +1,7 @@
+# Dev/CI tooling — installed on top of requirements.txt during development.
+# Constrain to the locked prod versions so dev tools never pull conflicting transitives.
+-c requirements.txt
+
+mypy==1.19.1
+pylint==4.0.4
+pip-tools
