@@ -12,8 +12,8 @@
     <a href="https://pypi.org/project/aiohttp/3.8.6/">
         <img src="https://img.shields.io/badge/aiohttp-v3.8.6-informational" alt="aiohttp version">
     </a>
-    <a href="https://pypi.org/project/redis/7.1.0/">
-        <img src="https://img.shields.io/badge/redis-v7.1.0-informational" alt="redis version">
+    <a href="https://pypi.org/project/redis/7.4.0/">
+        <img src="https://img.shields.io/badge/redis-v7.4.0-informational" alt="redis version">
     </a>
     <a href="https://pypi.org/project/asyncpg/0.31.0/">
         <img src="https://img.shields.io/badge/asyncpg-v0.31.0-informational" alt="asyncpg version">
@@ -24,8 +24,8 @@
     <a href="https://pypi.org/project/environs/14.5.0/">
         <img src="https://img.shields.io/badge/environs-v14.5.0-informational" alt="environs version">
     </a>
-    <a href="https://pypi.org/project/Pillow/12.0.0/">
-        <img src="https://img.shields.io/badge/Pillow-v12.0.0-informational" alt="Pillow version">
+    <a href="https://pypi.org/project/Pillow/12.2.0/">
+        <img src="https://img.shields.io/badge/Pillow-v12.2.0-informational" alt="Pillow version">
     </a>
 </p>
 
