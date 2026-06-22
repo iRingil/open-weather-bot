@@ -50,12 +50,10 @@ python-dotenv==1.2.2
     # via environs
 pytz==2026.2
     # via babel
-redis==7.4.0
+redis==8.0.0
     # via -r requirements.in
 typing-extensions==4.15.0
     # via aiosignal
-tzdata==2026.2
-    # via tzlocal
 tzlocal==5.4.3
     # via apscheduler
 yarl==1.24.2
