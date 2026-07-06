@@ -42,7 +42,7 @@ multidict==6.7.1
     # via
     #   aiohttp
     #   yarl
-pillow==12.2.0
+pillow==12.3.0
     # via -r requirements.in
 propcache==0.5.2
     # via yarl
@@ -54,8 +54,6 @@ redis==7.4.0
     # via -r requirements.in
 typing-extensions==4.15.0
     # via aiosignal
-tzdata==2026.2
-    # via tzlocal
 tzlocal==5.4.3
     # via apscheduler
 yarl==1.24.2
