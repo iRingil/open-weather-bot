@@ -10,11 +10,6 @@ build==1.5.0
     # via pip-tools
 click==8.4.1
     # via pip-tools
-colorama==0.4.6
-    # via
-    #   build
-    #   click
-    #   pylint
 dill==0.4.1
     # via pylint
 isort==7.0.0
@@ -33,7 +28,7 @@ packaging==26.2
     #   wheel
 pathspec==1.1.1
     # via mypy
-pip-tools==7.5.3
+pip-tools==7.6.0
     # via -r requirements-dev.in
 platformdirs==4.10.0
     # via pylint
