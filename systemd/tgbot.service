@@ -2,6 +2,8 @@
 [Unit]
 Description=OpenWeatherBot daemon
 After=network.target
+StartLimitIntervalSec=600
+StartLimitBurst=30
 
 [Service]
 User=tgbot
@@ -10,6 +12,7 @@ Type=simple
 WorkingDirectory=/opt/open-weather-bot
 ExecStart=/opt/open-weather-bot/venv/bin/python /opt/open-weather-bot/bot.py
 Restart=always
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target
