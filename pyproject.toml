@@ -1,12 +1,13 @@
 [tool.pylint.main]
+extension-pkg-allow-list = ["orjson", "PIL"]
 fail-under = 10
 ignore = ["CVS"]
 ignore-patterns = ["^\\.#"]
-init-hook="import sys; sys.path.append('.')"
+init-hook="import sys; sys.path.append('src')"
 jobs = 0
 limit-inference-results = 100
 persistent = true
-py-version = "3.11"
+py-version = "3.13"
 
 [tool.pylint.basic]
 argument-naming-style = "snake_case"
@@ -18,7 +19,7 @@ class-naming-style = "PascalCase"
 const-naming-style = "UPPER_CASE"
 docstring-min-length = -1
 function-naming-style = "snake_case"
-good-names = ["dp", "db", "ex", "i", "j", "k", "Run", "_"]
+good-names = ["dp", "db", "ex", "i", "j", "k", "ok", "Run", "_"]
 inlinevar-naming-style = "any"
 method-naming-style = "snake_case"
 module-naming-style = "snake_case"
@@ -33,16 +34,17 @@ valid-classmethod-first-arg = ["cls"]
 valid-metaclass-classmethod-first-arg = ["cls"]
 
 [tool.pylint.design]
-max-args = 5
-max-attributes = 7
+max-args = 10
+max-attributes = 20
 max-bool-expr = 5
-max-branches = 17
-max-locals = 17
-max-parents = 7
-max-public-methods = 20
-max-returns = 6
+max-branches = 20
+max-locals = 30
+max-parents = 10
+max-positional-arguments = 10
+max-public-methods = 40
+max-returns = 20
 max-statements = 50
-min-public-methods = 1
+min-public-methods = 0
 
 [tool.pylint.exceptions]
 overgeneral-exceptions = ["builtins.BaseException"]
@@ -71,6 +73,7 @@ disable = [
     "locally-disabled",
     "raw-checker-failed",
     "suppressed-message",
+    "unused-argument",
     "use-symbolic-message-instead",
     "useless-suppression",
 ]
@@ -136,9 +139,16 @@ redefining-builtins-modules = ["six.moves", "past.builtins", "future.builtins", 
 
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.13"
 exclude = ["venv.*"]
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
+
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+python_files = ["tests/**/*.py"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

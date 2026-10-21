@@ -1,0 +1,13 @@
+/opt/open-weather-bot/logs/open-weather-bot.log {
+    daily
+    missingok
+    rotate 7
+    compress
+    delaycompress
+    notifempty
+    create 0644 tgbot tgbot
+    sharedscripts
+    postrotate
+        /bin/systemctl restart open-weather-bot.service >/dev/null 2>&1 || true
+    endscript
+}

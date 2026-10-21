@@ -1,0 +1,27 @@
+# Configuration for running the bot on a server as a systemd service.
+[Unit]
+Description=Open Weather Bot
+After=network.target redis.service postgresql.service nginx.service
+StartLimitIntervalSec=600
+StartLimitBurst=30
+
+[Service]
+User=tgbot
+Group=tgbot
+Type=simple
+WorkingDirectory=/opt/open-weather-bot
+ExecStart=/opt/open-weather-bot/.venv/bin/python /opt/open-weather-bot/app.py
+Restart=always
+RestartSec=5s
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+ProtectKernelModules=true
+ReadWritePaths=/opt/open-weather-bot/logs
+
+[Install]
+WantedBy=multi-user.target

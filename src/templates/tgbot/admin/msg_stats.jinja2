@@ -1,0 +1,7 @@
+ℹ️ <b>{% trans %}Statistics{% endtrans %}:</b>
+
+• {% trans %}Since beginning of the month{% endtrans %},
+  <b>{{ percent }} %</b> {% trans %}requests have been spent{% endtrans %}:
+  <b>{{ api_counter|group_digits }}</b> {% trans %}out of{% endtrans %} <b>{{ api_limit|group_digits }}</b>
+
+• {% trans %}Users in the database{% endtrans %}: <b>{{ users }}</b>

@@ -1,0 +1,160 @@
+# English translations for Open-Weather-Bot.
+# Copyright (C) 2026 Ringil
+# This file is distributed under the same license as the Open-Weather-Bot project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Open-Weather-Bot 2.0.0\n"
+"Report-Msgid-Bugs-To: i.ringil@proton.me\n"
+"POT-Creation-Date: 2026-10-21 04:33+0300\n"
+"PO-Revision-Date: 2026-10-21 04:33+0300\n"
+"Last-Translator: Ringil <i.ringil@proton.me>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: src/templates/tgbot/admin/cmd_stats.jinja2:1 src/templates/tgbot/admin/msg_stats.jinja2:1
+msgid "Statistics"
+msgstr "Statistics"
+
+#: src/templates/tgbot/admin/msg_stats.jinja2:3
+msgid "Since beginning of the month"
+msgstr "Since beginning of the month"
+
+#: src/templates/tgbot/admin/msg_stats.jinja2:4
+msgid "requests have been spent"
+msgstr "requests have been spent"
+
+#: src/templates/tgbot/admin/msg_stats.jinja2:5
+msgid "out of"
+msgstr "out of"
+
+#: src/templates/tgbot/admin/msg_stats.jinja2:7
+msgid "Users in the database"
+msgstr "Users in the database"
+
+#: src/templates/tgbot/commands/cmd_about.jinja2:1
+msgid "Bot info"
+msgstr "Bot info"
+
+#: src/templates/tgbot/commands/cmd_start.jinja2:1
+msgid "Set weather forecast"
+msgstr "Set weather forecast"
+
+#: src/templates/tgbot/commands/cmd_stop.jinja2:1
+msgid "Stop bot and delete data"
+msgstr "Stop bot and delete data"
+
+#: src/templates/tgbot/commands/msg_about.jinja2:1
+msgid "OpenWeatherBot is written in Python using the Aiogram 3 framework"
+msgstr "OpenWeatherBot is written in Python using the Aiogram 3 framework"
+
+#: src/templates/tgbot/commands/msg_about.jinja2:3
+msgid "Weather data provided by"
+msgstr "Weather data provided by"
+
+#: src/templates/tgbot/commands/msg_about.jinja2:4
+msgid "Icon by"
+msgstr "Icon by"
+
+#: src/templates/tgbot/commands/msg_about.jinja2:4
+msgid "on"
+msgstr "on"
+
+#: src/templates/tgbot/commands/msg_about.jinja2:5
+msgid "The source code is available on"
+msgstr "The source code is available on"
+
+#: src/templates/tgbot/commands/msg_data_deleted.jinja2:1
+msgid "All of your data has been deleted"
+msgstr "All of your data has been deleted"
+
+#: src/templates/tgbot/dialog/kb_another_city.jinja2:1
+msgid "Select another city:"
+msgstr "Select another city:"
+
+#: src/templates/tgbot/dialog/kb_send_geolocation.jinja2:1
+msgid "Send geolocation"
+msgstr "Send geolocation"
+
+#: src/templates/tgbot/dialog/msg_city_not_found.jinja2:1
+msgid "I couldn't find a single city!"
+msgstr "I couldn't find a single city!"
+
+#: src/templates/tgbot/dialog/msg_city_not_found.jinja2:3
+msgid "Try changing the name of the city:"
+msgstr "Try changing the name of the city:"
+
+#: src/templates/tgbot/dialog/msg_enter_city.jinja2:2
+msgid "Let's set the weather!"
+msgstr "Let's set the weather!"
+
+#: src/templates/tgbot/dialog/msg_enter_city.jinja2:5
+msgid "Write the name of the city or send your coordinates:"
+msgstr "Write the name of the city or send your coordinates:"
+
+#: src/templates/tgbot/dialog/msg_select_city.jinja2:1
+msgid "Select the desired city:"
+msgstr "Select the desired city:"
+
+#: src/templates/tgbot/dialog/msg_select_units.jinja2:1
+msgid "Choose units of temperature measurement:"
+msgstr "Choose units of temperature measurement:"
+
+#: src/templates/tgbot/dialog/msg_setup_complete.jinja2:1
+msgid "The weather setup is complete."
+msgstr "The weather setup is complete."
+
+#: src/templates/tgbot/dialog/msg_setup_complete.jinja2:3
+msgid "The data will be updated automatically every 3 hours."
+msgstr "The data will be updated automatically every 3 hours."
+
+#: src/templates/weather/current_weather.jinja2:2
+msgid "of precipitation in one hour"
+msgstr "of precipitation in one hour"
+
+#: src/templates/weather/current_weather.jinja2:4
+msgid "feels like"
+msgstr "feels like"
+
+#: src/templates/weather/current_weather.jinja2:6
+msgid "Humidity"
+msgstr "Humidity"
+
+#: src/templates/weather/current_weather.jinja2:6
+msgid "Dew point"
+msgstr "Dew point"
+
+#: src/templates/weather/current_weather.jinja2:7
+msgid "Wind speed"
+msgstr "Wind speed"
+
+#: src/templates/weather/current_weather.jinja2:7
+msgid "gusts to"
+msgstr "gusts to"
+
+#: src/templates/weather/current_weather.jinja2:8
+msgid "Pressure"
+msgstr "Pressure"
+
+#: src/templates/weather/current_weather.jinja2:10
+msgid "Visibility"
+msgstr "Visibility"
+
+#: src/templates/weather/current_weather.jinja2:13
+msgid "Sunrise"
+msgstr "Sunrise"
+
+#: src/templates/weather/current_weather.jinja2:13
+msgid "Sunset"
+msgstr "Sunset"
+
+#: src/templates/weather/current_weather_failed.jinja2:3
+msgid "Failed to obtain data about the current weather."
+msgstr "Failed to obtain data about the current weather."
+

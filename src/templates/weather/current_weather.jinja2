@@ -1,0 +1,13 @@
+<b>{{ city|e }}, {{ time }}</b>
+{{ emoji }} {{ description|e }}{% if precipitation %}, <b>{{ precipitation }} {{ precip_unit }}</b> {% trans %}of precipitation in one hour{% endtrans %}{% endif +%}
+
+🌡 <b>{{ temp }}{{ temp_unit }}</b>, {% trans %}feels like{% endtrans %} <b>{{ feels_like }}{{ temp_unit }}</b>
+
+💦 {% trans %}Humidity{% endtrans %}: <b>{{ humidity }}%</b>, {% trans %}Dew point{% endtrans %}: <b>{{ dew_point }}{{ temp_unit }}</b>
+💨 {% trans %}Wind speed{% endtrans %}: <b>{{ wind_speed }} {{ wind_unit }}</b>{% if gust %}, {% trans %}gusts to{% endtrans %}: <b>{{ gust }} {{ wind_unit }}</b>{% endif +%}
+🌡 {% trans %}Pressure{% endtrans %}: <b>{{ pressure }} hPa</b>
+{% if visibility %}
+🌫️ {% trans %}Visibility{% endtrans %}: <b>{{ visibility }} {{ vis_unit }}</b>
+{% endif %}
+
+🌅 {% trans %}Sunrise{% endtrans %}: <b>{{ sunrise }}</b>  🌇 {% trans %}Sunset{% endtrans %}: <b>{{ sunset }}</b>
