@@ -9,12 +9,14 @@ on:
     paths:
       - 'src/**'
       - 'tests/**'
+      - 'pyproject.toml'
       - '.github/workflows/**'
   pull_request:
     branches: [ "master" ]
     paths:
       - 'src/**'
       - 'tests/**'
+      - 'pyproject.toml'
       - '.github/workflows/**'
 
 jobs:
@@ -34,8 +36,9 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f src/requirements.txt ]; then pip install -r src/requirements.txt; fi
           if [ -f src/requirements-dev.txt ]; then pip install -r src/requirements-dev.txt; fi
+      # src must stay 100% covered, lines and branches (see [tool.coverage] in pyproject.toml).
       - name: Test with pytest
         env:
           PYTHONPATH: src
         run: |
-          pytest -c pyproject.toml tests
+          pytest -c pyproject.toml tests --cov --cov-fail-under=100

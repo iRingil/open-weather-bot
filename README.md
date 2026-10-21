@@ -148,7 +148,7 @@ do the same.
 pip install -r src/requirements-dev.txt
 pylint --rcfile=pyproject.toml --recursive=y src tests
 mypy --config-file=pyproject.toml src tests
-pytest -c pyproject.toml tests
+pytest -c pyproject.toml tests --cov --cov-fail-under=100
 black -l 120 src tests
 ```
 
