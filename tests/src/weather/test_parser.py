@@ -147,10 +147,52 @@ class TestParseCurrentWeather:
         assert data is not None
         assert (data.precipitation, data.gust, data.visibility) == (None, None, None)
 
-    @pytest.mark.parametrize("raw", [_current(main=None), _current(weather=[]), _current(timezone="x")])
+    @pytest.mark.parametrize(
+        "overrides",
+        [
+            {"visibility": "far", "wind": {"speed": 3, "gust": None}, "rain": {"1h": "lots"}},
+            {"visibility": float("nan"), "wind": {"speed": 3, "gust": float("inf")}, "rain": {"1h": -1}},
+            {"visibility": True, "wind": {"speed": 3, "gust": [9]}, "rain": [0.4]},
+        ],
+    )
+    def test_malformed_optional_fields_are_dropped(self, overrides: dict[str, Any]) -> None:
+        """
+        A malformed gust, visibility or precipitation is dropped, the rest is still parsed.
+
+        :param overrides: Malformed optional fields.
+        :return: None
+        """
+        data: CurrentWeatherData | None = WeatherParser.parse_current_weather(raw_data=_current(**overrides))
+        assert data is not None
+        assert (data.temp, data.wind_speed) == (13, 3)
+        assert (data.precipitation, data.gust, data.visibility) == (None, None, None)
+
+    def test_fractional_visibility_is_rounded(self) -> None:
+        """
+        Visibility is kept in whole meters.
+
+        :return: None
+        """
+        data: CurrentWeatherData | None = WeatherParser.parse_current_weather(raw_data=_current(visibility=9000.4))
+        assert data is not None and data.visibility == 9000
+
+    @pytest.mark.parametrize(
+        "raw",
+        [
+            _current(main=None),
+            _current(weather=[]),
+            _current(timezone="x"),
+            _current(sys={"sunrise": _TS}),
+            _current(main={"temp": float("inf"), "feels_like": 1, "pressure": 1000, "humidity": 50}),
+            _current(main={"temp": float("nan"), "feels_like": 1, "pressure": 1000, "humidity": 50}),
+            _current(dt=10**20),
+            _current(wind="calm"),
+        ],
+    )
     def test_malformed_returns_none(self, raw: dict[str, Any]) -> None:
         """
-        A missing key, an empty list or a bad type gives None instead of raising.
+        A missing required field, an empty list, a bad type or a value out of range gives None
+        instead of raising.
 
         :param raw: Malformed response.
         :return: None

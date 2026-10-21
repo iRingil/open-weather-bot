@@ -14,7 +14,7 @@ from unittest.mock import AsyncMock, MagicMock, create_autospec, patch
 
 import pytest
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, TelegramRetryAfter
-from aiogram.types import BufferedInputFile, FSInputFile
+from aiogram.types import BufferedInputFile
 
 from core.db.data_types import Units, UserSettings
 from tgbot.services.forecast import ForecastService
@@ -55,14 +55,14 @@ def fake_sleep_fixture() -> Iterator[AsyncMock]:
 @pytest.fixture(name="reporter")
 def reporter_fixture() -> MagicMock:
     """
-    An autospecced WeatherReporter: every location has an image, every caption names its city
-    and language.
+    An autospecced WeatherReporter: every location has an image and current weather, every
+    caption names its city and language.
 
     :return: The mocked WeatherReporter.
     """
     mock: MagicMock = create_autospec(spec=WeatherReporter, instance=True)
     mock.forecast_image = AsyncMock(return_value=b"png")
-    mock.current_weather = AsyncMock(return_value=None)
+    mock.current_weather = AsyncMock(return_value=MagicMock())
 
     async def caption(city: str, units: Units, lang: str, **_: object) -> str:
         """
@@ -164,11 +164,11 @@ class TestUpdateAll:
         assert media[1] == "edited"
         assert isinstance(media[2], BufferedInputFile)  # Another location: its own upload
 
-    async def test_logo_when_no_forecast(
+    async def test_no_forecast_keeps_previous_report(
         self, service: ForecastService, db: MagicMock, reporter: MagicMock, bot: MagicMock
     ) -> None:
         """
-        Without a forecast image the logo replaces the old forecast.
+        Without a forecast image the location's users are left alone, the next location still runs.
 
         :param service: The ForecastService under test.
         :param db: The mocked Database.
@@ -176,10 +176,32 @@ class TestUpdateAll:
         :param bot: The mocked Bot.
         :return: None
         """
-        reporter.forecast_image.return_value = None
-        db.get_all_user_settings.return_value = [_user(1)]
+        reporter.forecast_image.side_effect = [None, b"png"]
+        db.get_all_user_settings.return_value = [_user(1), _user(2, city="Lviv")]
         await service.update_all()
-        assert isinstance(bot.edit_message_media.await_args.kwargs["media"].media, FSInputFile)
+        assert [c.kwargs["latitude"] for c in reporter.current_weather.await_args_list] == [49.84]
+        assert [c.kwargs["chat_id"] for c in bot.edit_message_media.await_args_list] == [2]
+        bot.send_photo.assert_not_awaited()
+
+    async def test_no_current_weather_keeps_previous_report(
+        self, service: ForecastService, db: MagicMock, reporter: MagicMock, bot: MagicMock
+    ) -> None:
+        """
+        Without the current weather in one language its users are left alone, the other
+        languages of the location are still updated.
+
+        :param service: The ForecastService under test.
+        :param db: The mocked Database.
+        :param reporter: The mocked WeatherReporter.
+        :param bot: The mocked Bot.
+        :return: None
+        """
+        reporter.current_weather.side_effect = [None, MagicMock()]
+        db.get_all_user_settings.return_value = [_user(1), _user(2), _user(3, lang="uk")]
+        await service.update_all()
+        assert [c.kwargs["chat_id"] for c in bot.edit_message_media.await_args_list] == [3]
+        assert reporter.caption.await_count == 1
+        bot.send_photo.assert_not_awaited()
 
     async def test_failing_location_does_not_stop_others(
         self, service: ForecastService, db: MagicMock, reporter: MagicMock, bot: MagicMock

@@ -1,6 +1,7 @@
 """Parses raw OpenWeatherMap API responses into typed data."""
 
 from datetime import datetime, timedelta, timezone
+from math import isfinite
 from typing import Any
 
 from loguru import logger
@@ -9,11 +10,37 @@ from weather.data_types import CityData, CurrentWeatherData, ForecastData, Forec
 
 __all__: tuple[str] = ("WeatherParser",)
 
-_PARSE_ERRORS: tuple[type[Exception], ...] = (KeyError, IndexError, TypeError, ValueError)
+# A missing key or list item, a wrong type, or a value out of range (NaN, Infinity, a huge timestamp)
+_PARSE_ERRORS: tuple[type[Exception], ...] = (
+    KeyError,
+    IndexError,
+    TypeError,
+    AttributeError,
+    ValueError,
+    OverflowError,
+    OSError,
+)
 
 
 class WeatherParser:
-    """Parses raw OpenWeatherMap API responses into typed data."""
+    """
+    Parses raw OpenWeatherMap API responses into typed data.
+
+    A response missing (or holding a malformed) required field is rejected as a whole. Optional
+    fields - wind gusts, visibility and precipitation - are dropped on their own instead.
+    """
+
+    @staticmethod
+    def _optional_number(value: Any) -> float | None:
+        """
+        Validates the value of an optional numeric field.
+
+        :param value: Raw value, possibly missing (None) or malformed.
+        :return: The value if it is a positive finite number, otherwise None.
+        """
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not isfinite(value) or value <= 0:
+            return None
+        return value
 
     @staticmethod
     def parse_city(raw_data: dict[str, Any], lang: str) -> CityData | None:
@@ -39,8 +66,8 @@ class WeatherParser:
             logger.error(f"Error when parsing city data: {repr(exc)}")
         return None
 
-    @staticmethod
-    def parse_current_weather(raw_data: dict[str, Any]) -> CurrentWeatherData | None:
+    @classmethod
+    def parse_current_weather(cls, raw_data: dict[str, Any]) -> CurrentWeatherData | None:
         """
         Parses a current weather API response.
 
@@ -50,20 +77,23 @@ class WeatherParser:
         try:
             city_tz: timezone = timezone(timedelta(seconds=raw_data["timezone"]))
             wind: dict[str, Any] = raw_data["wind"]
-            precipitation_data: dict[str, Any] = raw_data.get("snow") or raw_data.get("rain") or {}
-            precipitation: float | None = precipitation_data.get("1h")
-            visibility: int | None = raw_data.get("visibility")
+            gust: float | None = cls._optional_number(wind.get("gust"))
+            visibility: float | None = cls._optional_number(raw_data.get("visibility"))
+            precipitation_data: Any = raw_data.get("snow") or raw_data.get("rain")
+            precipitation: float | None = (
+                cls._optional_number(precipitation_data.get("1h")) if isinstance(precipitation_data, dict) else None
+            )
             return CurrentWeatherData(
                 temp=round(raw_data["main"]["temp"]),
                 feels_like=round(raw_data["main"]["feels_like"]),
                 weather_code=raw_data["weather"][0]["id"],
                 description=raw_data["weather"][0]["description"],
                 wind_speed=round(wind["speed"]),
-                gust=round(wind["gust"]) if wind.get("gust") else None,
+                gust=round(gust) if gust else None,
                 humidity=raw_data["main"]["humidity"],
                 pressure=raw_data["main"]["pressure"],
-                visibility=visibility or None,
-                precipitation=precipitation or None,
+                visibility=round(visibility) if visibility else None,
+                precipitation=precipitation,
                 time=datetime.fromtimestamp(raw_data["dt"], tz=city_tz),
                 sunrise=datetime.fromtimestamp(raw_data["sys"]["sunrise"], tz=city_tz),
                 sunset=datetime.fromtimestamp(raw_data["sys"]["sunset"], tz=city_tz),

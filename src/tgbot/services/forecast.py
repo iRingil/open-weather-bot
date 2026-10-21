@@ -46,6 +46,10 @@ class ForecastService(BaseService):
     same location gets it by file_id. Only the caption, which shows each user's own city name, is
     rendered per user.
 
+    A location whose forecast or current weather couldn't be obtained (the request failed, or a
+    required field of the response is missing) is skipped, so its users keep their previous
+    report rather than an error message. A report missing only optional fields is still sent.
+
     :cvar _SEND_INTERVAL: Pause after every delivery, keeping under Telegram's broadcast limits.
     :cvar _MAX_ATTEMPTS: Attempts to deliver to one user when Telegram asks to retry later.
     """
@@ -104,7 +108,10 @@ class ForecastService(BaseService):
         image: bytes | None = await self._reporter.forecast_image(
             latitude=location.latitude, longitude=location.longitude, units=location.units
         )
-        media: PhotoSource = BufferedInputFile(file=image, filename="forecast.png") if image else self._logo()
+        if image is None:
+            logger.warning(f"No forecast for {location}, {len(users)} users keep their previous report")
+            return
+        media: PhotoSource = BufferedInputFile(file=image, filename="forecast.png")
         by_lang: dict[str, list[UserSettings]] = defaultdict(list)
         for user in users:
             by_lang[user.lang].append(user)
@@ -112,6 +119,11 @@ class ForecastService(BaseService):
             current: CurrentWeatherData | None = await self._reporter.current_weather(
                 latitude=location.latitude, longitude=location.longitude, lang=lang, units=location.units
             )
+            if current is None:
+                logger.warning(
+                    f"No current weather for {location} ({lang}), {len(lang_users)} users keep their previous report"
+                )
+                continue
             for user in lang_users:
                 caption: str = await self._reporter.caption(
                     current=current, city=user.city, units=location.units, lang=lang
