@@ -11,7 +11,6 @@ from unittest.mock import AsyncMock, MagicMock, create_autospec
 import pytest
 
 from core.db.data_types import Units
-from tests.src.tgbot.helpers import make_call, make_message
 from tgbot.handlers.admin import AdminHandler
 from tgbot.handlers.commands import CommandsHandler
 from tgbot.handlers.dialog import DialogHandler
@@ -19,6 +18,8 @@ from tgbot.misc.data_types import CityCallback, UnitsCallback
 from tgbot.services.admin import AdminService
 from tgbot.services.commands import CommandsService
 from tgbot.services.dialog import DialogService
+
+from ..helpers import make_call, make_message
 
 __all__: tuple = ()
 
@@ -30,7 +31,8 @@ def dialog_service_fixture() -> MagicMock:
 
     :return: The mocked DialogService.
     """
-    return create_autospec(spec=DialogService, instance=True)
+    mock: MagicMock = create_autospec(spec=DialogService, instance=True)
+    return mock
 
 
 @pytest.fixture(name="call_bot")

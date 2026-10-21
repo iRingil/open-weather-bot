@@ -6,7 +6,7 @@ from typing import NamedTuple
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError, TelegramForbiddenError, TelegramRetryAfter
-from aiogram.types import BufferedInputFile, Message
+from aiogram.types import BufferedInputFile, Message, PhotoSize
 from loguru import logger
 
 from core.db.data_types import Units, UserSettings
@@ -104,7 +104,7 @@ class ForecastService(BaseService):
         image: bytes | None = await self._reporter.forecast_image(
             latitude=location.latitude, longitude=location.longitude, units=location.units
         )
-        photo: PhotoSource = BufferedInputFile(file=image, filename="forecast.png") if image else self._logo()
+        media: PhotoSource = BufferedInputFile(file=image, filename="forecast.png") if image else self._logo()
         by_lang: dict[str, list[UserSettings]] = defaultdict(list)
         for user in users:
             by_lang[user.lang].append(user)
@@ -116,9 +116,10 @@ class ForecastService(BaseService):
                 caption: str = await self._reporter.caption(
                     current=current, city=user.city, units=location.units, lang=lang
                 )
-                msg: Message | None = await self._deliver(user=user, photo=photo, caption=caption)
-                if msg is not None and msg.photo and not isinstance(photo, str):
-                    photo = msg.photo[-1].file_id  # Uploaded once, reused for the rest of the location
+                msg: Message | None = await self._deliver(user=user, photo=media, caption=caption)
+                sizes: list[PhotoSize] | None = msg.photo if msg is not None else None
+                if sizes and not isinstance(media, str):
+                    media = sizes[-1].file_id  # Uploaded once, reused for the rest of the location
 
     async def _deliver(self, user: UserSettings, photo: PhotoSource, caption: str) -> Message | None:
         """

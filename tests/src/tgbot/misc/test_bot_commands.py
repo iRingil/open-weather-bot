@@ -17,6 +17,8 @@ from tgbot.misc.bot_commands import BotCommands
 
 __all__: tuple = ()
 
+# pylint: disable=protected-access
+
 
 async def _render(tmpl: str, locale: str) -> str:
     """

@@ -11,7 +11,8 @@ from core.db.repository import Database
 from core.tg_templater import TgTemplater
 from tgbot.misc.keyboards import KeyboardManager
 from tgbot.services.common import BaseService
-from tests.src.tgbot.helpers import make_message
+
+from .helpers import make_message
 
 __all__: tuple = ()
 
@@ -19,7 +20,7 @@ __all__: tuple = ()
 @pytest.fixture(autouse=True)
 def reset_logo_cache() -> Iterator[None]:
     """
-    Resets the process-wide logo file_id cache around every test.
+    Resets the process-wide Logo file_id cache around every test.
 
     :return: None
     """
@@ -79,17 +80,16 @@ def db_fixture() -> MagicMock:
     return mock
 
 
-async def _render(tmpl: str, locale: str, data: dict | None = None, max_len: int = 4096) -> str:
+async def _render(tmpl: str, locale: str, data: dict | None = None, **_: object) -> str:
     """
     Fake TgTemplater.render: encodes the template, locale and data into the result.
 
     :param tmpl: Template path.
     :param locale: Locale.
     :param data: Template data.
-    :param max_len: Unused.
+    :param _: Other render arguments (max_len), unused.
     :return: "<template file name>|<locale>|<data>".
     """
-    del max_len
     return f"{tmpl.rsplit('/', 1)[-1]}|{locale}|{data or {}}"
 
 

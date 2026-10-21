@@ -75,7 +75,7 @@ class WeatherParser:
     @staticmethod
     def parse_forecast(raw_data: dict[str, Any]) -> ForecastData | None:
         """
-        Parses a 5 day / 3 hour forecast API response.
+        Parses a 5 day / 3-hour forecast API response.
 
         Times are converted to the forecast location's local time (city.timezone of the response),
         not the server's.

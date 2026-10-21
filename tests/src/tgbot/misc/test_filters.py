@@ -7,7 +7,6 @@ methods that would reach Telegram) rather than mocks, since the filter only ever
 """
 
 from datetime import datetime
-import pytest
 from aiogram.types import CallbackQuery, Chat, Message, User
 
 from tgbot.misc.filters import UserIsAdmin

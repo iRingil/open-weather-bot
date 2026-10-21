@@ -18,13 +18,14 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BufferedInputFile, Chat, FSInputFile, InaccessibleMessage, Location
 
 from core.db.data_types import Units, UserSettings
-from tests.src.tgbot.helpers import USER_ID, make_call, make_message
 from tgbot.misc.data_types import CityCallback, UnitsCallback
 from tgbot.misc.fsm_states import WeatherSetupStates
 from tgbot.services.dialog import DialogService
 from weather.client import WeatherAPI
 from weather.data_types import CityData
 from weather.reporter import WeatherReport, WeatherReporter
+
+from ..helpers import USER_ID, make_call, make_message
 
 __all__: tuple = ()
 

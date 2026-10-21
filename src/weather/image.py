@@ -179,9 +179,9 @@ class ForecastImage:
                 draw.rectangle(xy=(pos_x, 0, pos_x + self._COLUMN_WIDTH - 1, 163), fill=color)
                 self._draw_centered(draw=draw, pos=(pos_x, 15), text=point.time, font=self._font_big, color=text_color)
                 icons: dict[str, Image.Image] = self._icons_white if text_color == self._WHITE else self._icons
-                icon: Image.Image | None = icons.get(point.icon)
-                if icon is not None:
-                    canvas.alpha_composite(im=icon, dest=(pos_x + 17, 50))
+                icon_image: Image.Image | None = icons.get(point.icon)
+                if icon_image is not None:
+                    canvas.alpha_composite(im=icon_image, dest=(pos_x + 17, 50))
                 self._draw_centered(
                     draw=draw, pos=(pos_x, 126), text=f"{point.temp}{temp_unit}", font=self._font_big, color=text_color
                 )

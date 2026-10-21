@@ -17,9 +17,10 @@ from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, Teleg
 from aiogram.types import BufferedInputFile, FSInputFile
 
 from core.db.data_types import Units, UserSettings
-from tests.src.tgbot.helpers import telegram_method
 from tgbot.services.forecast import ForecastService
 from weather.reporter import WeatherReporter
+
+from ..helpers import telegram_method
 
 __all__: tuple = ()
 
@@ -63,17 +64,16 @@ def reporter_fixture() -> MagicMock:
     mock.forecast_image = AsyncMock(return_value=b"png")
     mock.current_weather = AsyncMock(return_value=None)
 
-    async def caption(current: object, city: str, units: Units, lang: str) -> str:
+    async def caption(city: str, units: Units, lang: str, **_: object) -> str:
         """
         Fake caption.
 
-        :param current: Unused.
         :param city: City name.
         :param units: Units.
         :param lang: Language code.
+        :param _: Other caption arguments (current), unused.
         :return: "<city>|<units>|<lang>".
         """
-        del current
         return f"{city}|{units}|{lang}"
 
     mock.caption = AsyncMock(side_effect=caption)

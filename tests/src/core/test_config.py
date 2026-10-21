@@ -137,8 +137,8 @@ class TestAdmins:
         """
         _write_env(
             base_dir=tmp_path,
-            content="WEATHER_API_TOKEN=tok\nADMIN_IDS=111,222,333\nPOSTGRES_DB_NAME=db\nPOSTGRES_DB_USER=u\nPOSTGRES_DB_PASS=p\n"
-            + _REQUIRED_REDIS_VARS,
+            content="WEATHER_API_TOKEN=tok\nADMIN_IDS=111,222,333\n"
+            "POSTGRES_DB_NAME=db\nPOSTGRES_DB_USER=u\nPOSTGRES_DB_PASS=p\n" + _REQUIRED_REDIS_VARS,
         )
         assert CoreConfig(base_dir=tmp_path).admins == [111, 222, 333]
 
@@ -151,8 +151,8 @@ class TestAdmins:
         """
         _write_env(
             base_dir=tmp_path,
-            content="WEATHER_API_TOKEN=tok\nADMIN_IDS=111\nPOSTGRES_DB_NAME=db\nPOSTGRES_DB_USER=u\nPOSTGRES_DB_PASS=p\n"
-            + _REQUIRED_REDIS_VARS,
+            content="WEATHER_API_TOKEN=tok\nADMIN_IDS=111\n"
+            "POSTGRES_DB_NAME=db\nPOSTGRES_DB_USER=u\nPOSTGRES_DB_PASS=p\n" + _REQUIRED_REDIS_VARS,
         )
         assert CoreConfig(base_dir=tmp_path).admins == [111]
 
@@ -345,8 +345,8 @@ class TestPostgres:
         """
         _write_env(
             base_dir=tmp_path,
-            content="WEATHER_API_TOKEN=tok\nADMIN_IDS=1\nPOSTGRES_DB_NAME=db\nPOSTGRES_DB_USER=u\nPOSTGRES_DB_PASS=supersecret\n"
-            + _REQUIRED_REDIS_VARS,
+            content="WEATHER_API_TOKEN=tok\nADMIN_IDS=1\n"
+            "POSTGRES_DB_NAME=db\nPOSTGRES_DB_USER=u\nPOSTGRES_DB_PASS=supersecret\n" + _REQUIRED_REDIS_VARS,
         )
         pg: PostgresConfig = CoreConfig(base_dir=tmp_path).postgres
         assert pg.password.get_secret_value() == "supersecret"
@@ -455,7 +455,9 @@ class TestRedis:
         """
         _write_env(base_dir=tmp_path, content=_ADMIN_AND_POSTGRES_VARS + extra_env)
         redis: Redis = CoreConfig(base_dir=tmp_path).redis
-        kwargs: dict = redis.connection_pool.connection_kwargs
+        pool: ConnectionPool | None = redis.connection_pool
+        assert pool is not None
+        kwargs: dict = pool.connection_kwargs
         assert kwargs["username"] is None
         assert kwargs["password"] is None
 

@@ -98,6 +98,7 @@ class TestParseCurrentWeather:
         """
         data: CurrentWeatherData | None = WeatherParser.parse_current_weather(raw_data=_current())
         assert data is not None
+        assert data.time.strftime("%H:%M") == "01:13"
         tz: timezone = timezone(timedelta(seconds=10800))
         assert data == CurrentWeatherData(
             temp=13,
@@ -114,7 +115,6 @@ class TestParseCurrentWeather:
             sunrise=datetime.fromtimestamp(_TS - 3600, tz=tz),
             sunset=datetime.fromtimestamp(_TS + 3600, tz=tz),
         )
-        assert data.time.strftime("%H:%M") == "01:13"
 
     def test_snow_takes_precedence_over_rain(self) -> None:
         """

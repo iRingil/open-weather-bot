@@ -11,6 +11,7 @@ column by column.
 
 import re
 from datetime import datetime
+from typing import Any, cast
 from unittest.mock import AsyncMock
 
 import pytest
@@ -22,6 +23,30 @@ from core.db.data_types import Units, UserSettings
 from core.db.repository import Database
 
 __all__: tuple = ()
+
+# pylint: disable=protected-access
+
+
+def _mock(method: Any) -> AsyncMock:
+    """
+    Types a primitive the db fixture replaced with an AsyncMock as one.
+
+    :param method: A mocked Database primitive, e.g. db._execute.
+    :return: The same object, typed as AsyncMock.
+    """
+    return cast(AsyncMock, method)
+
+
+def _await_args(method: Any) -> tuple[Any, ...]:
+    """
+    Returns the positional arguments of the last await of a mocked Database primitive.
+
+    :param method: A mocked Database primitive, e.g. db._execute.
+    :return: The positional arguments, the query first.
+    """
+    await_args = _mock(method).await_args
+    assert await_args is not None
+    return tuple(await_args.args)
 
 
 def _normalize(sql: str) -> str:
@@ -89,7 +114,7 @@ class TestCreateTables:
         :return: None
         """
         await db.create_tables()
-        queries: list[str] = [_normalize(call.kwargs["query"]) for call in db._execute.await_args_list]
+        queries: list[str] = [_normalize(call.kwargs["query"]) for call in _mock(db._execute).await_args_list]
         assert queries == [
             "CREATE TABLE IF NOT EXISTS users ( id BIGINT PRIMARY KEY, dialog_id BIGINT NOT NULL, "
             "lang VARCHAR(2), city VARCHAR(72), latitude DOUBLE PRECISION, longitude DOUBLE PRECISION, "
@@ -110,7 +135,7 @@ class TestSaveDialogId:
         :return: None
         """
         await db.save_dialog_id(user_id=42, dialog_id=7)
-        query, *args = db._execute.await_args.args
+        query, *args = _await_args(db._execute)
         assert _normalize(query) == (
             "INSERT INTO users (id, dialog_id) VALUES ($1, $2) "
             "ON CONFLICT (id) DO UPDATE SET dialog_id = EXCLUDED.dialog_id"
@@ -128,9 +153,9 @@ class TestGetDialogId:
         :param db: The Database fixture.
         :return: None
         """
-        db._fetchval.return_value = 7
+        _mock(db._fetchval).return_value = 7
         assert await db.get_dialog_id(user_id=42) == 7
-        query, *args = db._fetchval.await_args.args
+        query, *args = _await_args(db._fetchval)
         assert _normalize(query) == "SELECT dialog_id FROM users WHERE id = $1"
         assert args == [42]
 
@@ -158,7 +183,7 @@ class TestSaveUserSettings:
             user_id=42, dialog_id=7, lang="uk", city="Kyiv", latitude=50.45, longitude=30.52, units=Units.IMPERIAL
         )
         await db.save_user_settings(settings=settings)
-        query, *args = db._execute.await_args.args
+        query, *args = _await_args(db._execute)
         assert _normalize(query) == (
             "INSERT INTO users (id, dialog_id, lang, city, latitude, longitude, units) "
             "VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO UPDATE SET "
@@ -182,7 +207,7 @@ class TestGetUserSettings:
         :param expected: The Units member it must become.
         :return: None
         """
-        db._fetchrow.return_value = _row(units=raw_units)
+        _mock(db._fetchrow).return_value = _row(units=raw_units)
         result: UserSettings | None = await db.get_user_settings(user_id=42)
         assert result == UserSettings(
             user_id=42, dialog_id=7, lang="uk", city="Kyiv", latitude=50.45, longitude=30.52, units=expected
@@ -197,7 +222,7 @@ class TestGetUserSettings:
         :return: None
         """
         await db.get_user_settings(user_id=42)
-        query, *args = db._fetchrow.await_args.args
+        query, *args = _await_args(db._fetchrow)
         assert _normalize(query) == (
             "SELECT id, dialog_id, lang, city, latitude, longitude, units FROM users "
             "WHERE id = $1 AND units IS NOT NULL"
@@ -225,13 +250,13 @@ class TestGetAllUserSettings:
         :return: None
         """
         second: dict[str, object] = {**_row(units="imperial"), "id": 43, "dialog_id": 8}
-        db._fetch.return_value = [_row(), second]
+        _mock(db._fetch).return_value = [_row(), second]
         result: list[UserSettings] = await db.get_all_user_settings()
         assert [(user.user_id, user.dialog_id, user.units) for user in result] == [
             (42, 7, Units.METRIC),
             (43, 8, Units.IMPERIAL),
         ]
-        query: str = db._fetch.await_args.args[0]
+        query: str = _await_args(db._fetch)[0]
         assert _normalize(query) == (
             "SELECT id, dialog_id, lang, city, latitude, longitude, units FROM users WHERE units IS NOT NULL"
         )
@@ -257,7 +282,7 @@ class TestDeleteUser:
         :return: None
         """
         await db.delete_user(user_id=42)
-        query, *args = db._execute.await_args.args
+        query, *args = _await_args(db._execute)
         assert _normalize(query) == "DELETE FROM users WHERE id = $1"
         assert args == [42]
 
@@ -272,9 +297,9 @@ class TestGetNumberOfUsers:
         :param db: The Database fixture.
         :return: None
         """
-        db._fetchval.return_value = 12
+        _mock(db._fetchval).return_value = 12
         assert await db.get_number_of_users() == 12
-        assert _normalize(db._fetchval.await_args.args[0]) == "SELECT COUNT(*) FROM users"
+        assert _normalize(_await_args(db._fetchval)[0]) == "SELECT COUNT(*) FROM users"
 
     async def test_none_becomes_zero(self, db: Database) -> None:
         """
@@ -309,9 +334,9 @@ class TestApiCounter:
         :return: None
         """
         monkeypatch.setattr(target=repository.Database, name="_current_month", value=staticmethod(lambda: "2026.10"))
-        db._fetchval.return_value = 1500
+        _mock(db._fetchval).return_value = 1500
         assert await db.get_api_counter_value() == 1500
-        query, *args = db._fetchval.await_args.args
+        query, *args = _await_args(db._fetchval)
         assert _normalize(query) == "SELECT counter FROM api_request_counters WHERE month = $1"
         assert args == ["2026.10"]
 
@@ -339,7 +364,7 @@ class TestApiCounter:
         """
         monkeypatch.setattr(target=repository.Database, name="_current_month", value=staticmethod(lambda: "2026.10"))
         await db.increase_api_counter(**kwargs)
-        query, *args = db._execute.await_args.args
+        query, *args = _await_args(db._execute)
         assert _normalize(query) == (
             "INSERT INTO api_request_counters (month, counter) VALUES ($1, $2) "
             "ON CONFLICT (month) DO UPDATE SET counter = api_request_counters.counter + EXCLUDED.counter"
@@ -359,4 +384,4 @@ class TestClose:
         """
         db._close = AsyncMock(return_value=None)  # type: ignore [method-assign]
         await db.close()
-        db._close.assert_awaited_once_with()
+        _mock(db._close).assert_awaited_once_with()

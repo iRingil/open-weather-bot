@@ -8,8 +8,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from tests.src.tgbot.helpers import make_message
 from tgbot.services.admin import AdminService
+
+from ..helpers import make_message
 
 __all__: tuple = ()
 

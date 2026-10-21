@@ -27,7 +27,7 @@ class WeatherAPI:
 
     :cvar _GEOCODING_API_URL: Base URL of the geocoding API.
     :cvar _CURRENT_WEATHER_API_URL: URL of the current weather API.
-    :cvar _FORECAST_API_URL: URL of the 5 day / 3 hour forecast API.
+    :cvar _FORECAST_API_URL: URL of the 5 day / 3-hour forecast API.
     :cvar _MIN_REQUEST_INTERVAL: Minimum time between two requests, in seconds.
     :cvar _CITIES_LIMIT: Maximum number of cities returned by a city search.
     :cvar _FORECAST_STEPS: Number of 3-hour forecast steps requested (8 = 24 hours).

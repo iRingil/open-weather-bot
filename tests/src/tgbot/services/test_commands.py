@@ -12,9 +12,10 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from tests.src.tgbot.helpers import USER_ID, make_message
 from tgbot.misc.fsm_states import WeatherSetupStates
 from tgbot.services.commands import CommandsService
+
+from ..helpers import USER_ID, make_message
 
 __all__: tuple = ()
 

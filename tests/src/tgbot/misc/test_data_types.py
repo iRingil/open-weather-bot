@@ -60,7 +60,7 @@ class TestWeatherSetupStates:
 
         :return: None
         """
-        assert [state.state for state in WeatherSetupStates.__all_states__] == [
+        assert [state.state for state in WeatherSetupStates.__all_states__] == [  # pylint: disable=no-member
             "WeatherSetupStates:wait_for_city",
             "WeatherSetupStates:wait_for_city_choice",
             "WeatherSetupStates:wait_for_units",

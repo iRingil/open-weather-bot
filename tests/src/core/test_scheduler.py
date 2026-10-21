@@ -15,6 +15,8 @@ from core.scheduler import Scheduler
 
 __all__: tuple = ()
 
+# pylint: disable=protected-access
+
 
 @pytest.fixture(name="update_weather")
 def update_weather_fixture() -> AsyncMock:

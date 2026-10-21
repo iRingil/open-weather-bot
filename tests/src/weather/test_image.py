@@ -5,6 +5,7 @@ Draws real images with the real bundled font and icons, then inspects them with 
 """
 
 from io import BytesIO
+from typing import cast
 
 import pytest
 from PIL import Image
@@ -14,6 +15,28 @@ from weather.data_types import ForecastData, ForecastPoint
 from weather.image import ForecastImage
 
 __all__: tuple = ()
+
+
+def _rgb(image: Image.Image, xy: tuple[int, int]) -> tuple[int, ...]:
+    """
+    Returns the RGB part of one pixel.
+
+    :param image: Image to read.
+    :param xy: Pixel coordinates.
+    :return: (R, G, B).
+    """
+    return cast(tuple[int, ...], image.getpixel(xy))[:3]
+
+
+def _colors(image: Image.Image) -> set[tuple[int, ...]]:
+    """
+    Returns every RGB color present in an image.
+
+    :param image: Image to read.
+    :return: Set of (R, G, B).
+    """
+    colors = cast(list[tuple[int, tuple[int, ...]]], image.getcolors(maxcolors=100_000))
+    return {color[1][:3] for color in colors}
 
 
 @pytest.fixture(name="renderer", scope="module")
@@ -161,9 +184,9 @@ class TestDraw:
         :return: None
         """
         image: Image.Image = _open(png=renderer.draw(forecast=_forecast(temp=68, wind=5), units=Units.IMPERIAL))
-        assert image.getpixel((2, 2))[:3] == (0xE0, 0x9F, 0x41)
-        assert image.getpixel((2, 195))[:3] == (0x5A, 0x56, 0x73)
-        assert image.getpixel((99, 2))[:3] == (0x26, 0x26, 0x26)  # Gap between columns
+        assert _rgb(image, (2, 2)) == (0xE0, 0x9F, 0x41)
+        assert _rgb(image, (2, 195)) == (0x5A, 0x56, 0x73)
+        assert _rgb(image, (99, 2)) == (0x26, 0x26, 0x26)  # Gap between columns
 
     def test_unknown_icon_and_short_forecast(self, renderer: ForecastImage) -> None:
         """
@@ -174,7 +197,7 @@ class TestDraw:
         """
         image: Image.Image = _open(png=renderer.draw(forecast=_forecast(count=3, icon="99x"), units=Units.METRIC))
         assert image.size == (799, 199)
-        assert image.getpixel((750, 100))[:3] == (0x26, 0x26, 0x26)
+        assert _rgb(image, (750, 100)) == (0x26, 0x26, 0x26)
 
     def test_extra_points_are_ignored(self, renderer: ForecastImage) -> None:
         """
@@ -195,7 +218,7 @@ class TestDraw:
         dark: Image.Image = _open(png=renderer.draw(forecast=_forecast(temp=45), units=Units.METRIC))
         light: Image.Image = _open(png=renderer.draw(forecast=_forecast(temp=10), units=Units.METRIC))
         icon_area: tuple[int, int, int, int] = (17, 50, 82, 115)
-        dark_colors: set[tuple[int, ...]] = {c[1][:3] for c in dark.crop(icon_area).getcolors(maxcolors=100_000)}
-        light_colors: set[tuple[int, ...]] = {c[1][:3] for c in light.crop(icon_area).getcolors(maxcolors=100_000)}
+        dark_colors: set[tuple[int, ...]] = _colors(dark.crop(icon_area))
+        light_colors: set[tuple[int, ...]] = _colors(light.crop(icon_area))
         assert (255, 255, 255) in dark_colors
         assert (0, 0, 0) in light_colors

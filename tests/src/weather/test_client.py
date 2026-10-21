@@ -82,7 +82,8 @@ def _get_kwargs(http: MagicMock) -> dict[str, Any]:
     :param http: The mocked HttpClient.
     :return: Keyword arguments.
     """
-    return dict(http.get.await_args.kwargs)
+    kwargs: dict[str, Any] = http.get.await_args.kwargs
+    return dict(kwargs)
 
 
 class TestNormalizeCityName:

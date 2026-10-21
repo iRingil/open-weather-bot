@@ -11,12 +11,17 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from aiogram.exceptions import TelegramBadRequest
+from aiogram.types import InlineKeyboardMarkup, ReplyKeyboardMarkup
 from aiogram.types import BufferedInputFile, FSInputFile, InaccessibleMessage, InputMediaPhoto, Chat, Message, User
 
 from tgbot.services.common import BaseService
-from tests.src.tgbot.helpers import USER_ID, make_call, make_message, telegram_method
+
+from ..helpers import USER_ID, make_call, make_message, telegram_method
 
 __all__: tuple = ()
+
+_KB: InlineKeyboardMarkup = InlineKeyboardMarkup(inline_keyboard=[])
+_GEO: ReplyKeyboardMarkup = ReplyKeyboardMarkup(keyboard=[])
 
 
 @pytest.fixture(name="service")
@@ -80,7 +85,7 @@ class TestLogo:
         logo = service._logo()
         assert isinstance(logo, FSInputFile)
         assert logo.path == config.paths.bot_logo
-        service._remember_logo(photo=logo, message=make_message(photo_id="logo_id"))
+        service._remember_logo(sent=logo, message=make_message(photo_id="logo_id"))
         assert service._logo() == "logo_id"
 
     def test_does_not_remember_other_photos_or_overwrite(self, service: BaseService) -> None:
@@ -90,12 +95,12 @@ class TestLogo:
         :param service: The BaseService under test.
         :return: None
         """
-        service._remember_logo(photo=BufferedInputFile(b"x", "f.png"), message=make_message(photo_id="forecast"))
-        service._remember_logo(photo="file_id", message=make_message(photo_id="other"))
-        service._remember_logo(photo=service._logo(), message=make_message(text="no photo"))
+        service._remember_logo(sent=BufferedInputFile(b"x", "f.png"), message=make_message(photo_id="forecast"))
+        service._remember_logo(sent="file_id", message=make_message(photo_id="other"))
+        service._remember_logo(sent=service._logo(), message=make_message(text="no photo"))
         assert BaseService._logo_file_id is None
-        service._remember_logo(photo=service._logo(), message=make_message(photo_id="first"))
-        service._remember_logo(photo=FSInputFile("x"), message=make_message(photo_id="second"))
+        service._remember_logo(sent=service._logo(), message=make_message(photo_id="first"))
+        service._remember_logo(sent=FSInputFile("x"), message=make_message(photo_id="second"))
         assert BaseService._logo_file_id == "first"
 
 
@@ -157,11 +162,11 @@ class TestSendPhoto:
         :param bot: The mocked Bot.
         :return: None
         """
-        msg: Message = await service._send_photo(bot=bot, chat_id=USER_ID, caption="cap", reply_markup="kb")
+        msg: Message = await service._send_photo(bot=bot, chat_id=USER_ID, caption="cap", reply_markup=_KB)
         assert msg.message_id == 100
         kwargs = bot.send_photo.await_args.kwargs
         assert isinstance(kwargs["photo"], FSInputFile)
-        assert kwargs == {**kwargs, "chat_id": USER_ID, "caption": "cap", "reply_markup": "kb"}
+        assert kwargs == {**kwargs, "chat_id": USER_ID, "caption": "cap", "reply_markup": _KB}
         assert kwargs["disable_notification"] is True
         assert BaseService._logo_file_id == "sent"
 
@@ -191,10 +196,10 @@ class TestReplaceDialog:
         :return: None
         """
         msg: Message = await service._replace_dialog(
-            bot=bot, chat_id=USER_ID, old_msg_id=50, caption="cap", reply_markup="geo"
+            bot=bot, chat_id=USER_ID, old_msg_id=50, caption="cap", reply_markup=_GEO
         )
         assert msg.message_id == 100
-        assert bot.send_photo.await_args.kwargs["reply_markup"] == "geo"
+        assert bot.send_photo.await_args.kwargs["reply_markup"] == _GEO
         db.save_dialog_id.assert_awaited_once_with(user_id=USER_ID, dialog_id=100)
         bot.delete_message.assert_awaited_once_with(chat_id=USER_ID, message_id=50)
 
@@ -222,10 +227,10 @@ class TestEditOrSendMsg:
         :param db: The mocked Database.
         :return: None
         """
-        msg = await service._edit_or_send_msg(bot=bot, chat_id=USER_ID, msg_id=50, caption="cap", reply_markup="kb")
+        msg = await service._edit_or_send_msg(bot=bot, chat_id=USER_ID, msg_id=50, caption="cap", reply_markup=_KB)
         assert msg is not None and msg.message_id == 50
         bot.edit_message_caption.assert_awaited_once_with(
-            chat_id=USER_ID, message_id=50, caption="cap", reply_markup="kb"
+            chat_id=USER_ID, message_id=50, caption="cap", reply_markup=_KB
         )
         bot.edit_message_media.assert_not_awaited()
         bot.send_photo.assert_not_awaited()
@@ -294,11 +299,11 @@ class TestEditOrSendMsg:
         """
         bot.edit_message_media.side_effect = _bad_request("Bad Request: message to edit not found")
         msg = await service._edit_or_send_msg(
-            bot=bot, chat_id=USER_ID, msg_id=50, caption="cap", photo="file_id", reply_markup="kb"
+            bot=bot, chat_id=USER_ID, msg_id=50, caption="cap", photo="file_id", reply_markup=_KB
         )
         assert msg is not None and msg.message_id == 100
         bot.send_photo.assert_awaited_once_with(
-            chat_id=USER_ID, photo="file_id", caption="cap", reply_markup="kb", disable_notification=True
+            chat_id=USER_ID, photo="file_id", caption="cap", reply_markup=_KB, disable_notification=True
         )
         db.save_dialog_id.assert_awaited_once_with(user_id=USER_ID, dialog_id=100)
         bot.delete_message.assert_awaited_once_with(chat_id=USER_ID, message_id=50)
@@ -333,9 +338,9 @@ class TestEditOrSendCallback:
         :return: None
         """
         call = make_call(bot=bot, message=make_message(message_id=33, photo_id="p"))
-        await service._edit_or_send_callback(call=call, caption="cap", reply_markup="kb")
+        await service._edit_or_send_callback(call=call, caption="cap", reply_markup=_KB)
         bot.edit_message_caption.assert_awaited_once_with(
-            chat_id=USER_ID, message_id=33, caption="cap", reply_markup="kb"
+            chat_id=USER_ID, message_id=33, caption="cap", reply_markup=_KB
         )
         db.get_dialog_id.assert_not_awaited()
 

@@ -8,11 +8,13 @@ on:
     branches: [ "master" ]
     paths:
       - 'src/**'
+      - 'tests/**'
       - '.github/workflows/**'
   pull_request:
     branches: [ "master" ]
     paths:
       - 'src/**'
+      - 'tests/**'
       - '.github/workflows/**'
 
 jobs:
@@ -36,4 +38,4 @@ jobs:
         env:
           PYTHONPATH: src
         run: |
-          mypy --config-file=pyproject.toml src
+          mypy --config-file=pyproject.toml src tests

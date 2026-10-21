@@ -11,6 +11,7 @@ from aiogram.types import (
     InputFile,
     InputMediaPhoto,
     Message,
+    PhotoSize,
     ReplyKeyboardMarkup,
     User,
 )
@@ -80,16 +81,17 @@ class BaseService:
         return BaseService._logo_file_id or FSInputFile(path=self._config.paths.bot_logo)
 
     @staticmethod
-    def _remember_logo(photo: PhotoSource, message: Message) -> None:
+    def _remember_logo(sent: PhotoSource, message: Message) -> None:
         """
         Remembers the logo's file_id once Telegram has it.
 
-        :param photo: The photo that was just sent.
+        :param sent: The photo that was just sent.
         :param message: The message it was sent in.
         :return: None
         """
-        if isinstance(photo, FSInputFile) and message.photo and BaseService._logo_file_id is None:
-            BaseService._logo_file_id = message.photo[-1].file_id
+        sizes: list[PhotoSize] | None = message.photo
+        if isinstance(sent, FSInputFile) and sizes and BaseService._logo_file_id is None:
+            BaseService._logo_file_id = sizes[-1].file_id
 
     @staticmethod
     async def _delete_msg(bot: Bot, chat_id: int, msg_id: int | None) -> None:
@@ -115,8 +117,9 @@ class BaseService:
         :param message: The message to delete.
         :return: None
         """
-        if message.bot is not None:
-            await self._delete_msg(bot=message.bot, chat_id=message.chat.id, msg_id=message.message_id)
+        bot: Bot | None = message.bot
+        if bot is not None:
+            await self._delete_msg(bot=bot, chat_id=message.chat.id, msg_id=message.message_id)
 
     async def _send_photo(
         self,
@@ -140,7 +143,7 @@ class BaseService:
         msg: Message = await bot.send_photo(
             chat_id=chat_id, photo=photo, caption=caption, reply_markup=reply_markup, disable_notification=True
         )
-        self._remember_logo(photo=photo, message=msg)
+        self._remember_logo(sent=photo, message=msg)
         return msg
 
     async def _replace_dialog(
@@ -210,7 +213,7 @@ class BaseService:
                 if not isinstance(result, Message):
                     return None
                 if photo is not None:
-                    self._remember_logo(photo=photo, message=result)
+                    self._remember_logo(sent=photo, message=result)
                 return result
             # 2. If the message doesn't exist or has the same content:
             except TelegramBadRequest as e:

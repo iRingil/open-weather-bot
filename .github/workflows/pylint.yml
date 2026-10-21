@@ -8,11 +8,13 @@ on:
     branches: [ "master" ]
     paths:
       - 'src/**'
+      - 'tests/**'
       - '.github/workflows/**'
   pull_request:
     branches: [ "master" ]
     paths:
       - 'src/**'
+      - 'tests/**'
       - '.github/workflows/**'
 
 jobs:
@@ -36,4 +38,4 @@ jobs:
         env:
           PYTHONPATH: src
         run: |
-          pylint --rcfile=pyproject.toml --recursive=y src
+          pylint --rcfile=pyproject.toml --recursive=y src tests
