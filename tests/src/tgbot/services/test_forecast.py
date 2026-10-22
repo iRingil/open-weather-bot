@@ -13,7 +13,12 @@ from typing import Iterator
 from unittest.mock import AsyncMock, MagicMock, create_autospec, patch
 
 import pytest
-from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, TelegramRetryAfter
+from aiogram.exceptions import (
+    TelegramBadRequest,
+    TelegramForbiddenError,
+    TelegramNetworkError,
+    TelegramRetryAfter,
+)
 from aiogram.types import BufferedInputFile
 
 from core.db.data_types import Units, UserSettings
@@ -296,6 +301,41 @@ class TestDeliver:
         """
         bot.edit_message_media.side_effect = TelegramRetryAfter(
             method=telegram_method(), message="Too Many Requests", retry_after=1
+        )
+        assert await service._deliver(user=_user(1), photo="file", caption="cap") is None
+        assert bot.edit_message_media.await_count == 3
+        db.delete_user.assert_not_awaited()
+
+    async def test_network_error_then_success(
+        self, service: ForecastService, bot: MagicMock, fake_sleep: AsyncMock
+    ) -> None:
+        """
+        A dropped connection waits a moment and retries.
+
+        :param service: The ForecastService under test.
+        :param bot: The mocked Bot.
+        :param fake_sleep: The patched sleep.
+        :return: None
+        """
+        ok = bot.edit_message_media.return_value
+        bot.edit_message_media.side_effect = [
+            TelegramNetworkError(method=telegram_method(), message="ClientOSError: Can not write request body"),
+            ok,
+        ]
+        assert await service._deliver(user=_user(1), photo="file", caption="cap") is ok
+        assert [c.args[0] for c in fake_sleep.await_args_list] == [1, 1 / 25]
+
+    async def test_network_error_gives_up(self, service: ForecastService, bot: MagicMock, db: MagicMock) -> None:
+        """
+        After three network failures the user is skipped (not deleted).
+
+        :param service: The ForecastService under test.
+        :param bot: The mocked Bot.
+        :param db: The mocked Database.
+        :return: None
+        """
+        bot.edit_message_media.side_effect = TelegramNetworkError(
+            method=telegram_method(), message="Request timeout error"
         )
         assert await service._deliver(user=_user(1), photo="file", caption="cap") is None
         assert bot.edit_message_media.await_count == 3

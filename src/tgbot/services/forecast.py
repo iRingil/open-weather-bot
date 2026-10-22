@@ -5,7 +5,7 @@ from collections import defaultdict
 from typing import NamedTuple
 
 from aiogram import Bot
-from aiogram.exceptions import TelegramAPIError, TelegramForbiddenError, TelegramRetryAfter
+from aiogram.exceptions import TelegramAPIError, TelegramForbiddenError, TelegramNetworkError, TelegramRetryAfter
 from aiogram.types import BufferedInputFile, Message, PhotoSize
 from loguru import logger
 
@@ -51,11 +51,14 @@ class ForecastService(BaseService):
     report rather than an error message. A report missing only optional fields is still sent.
 
     :cvar _SEND_INTERVAL: Pause after every delivery, keeping under Telegram's broadcast limits.
-    :cvar _MAX_ATTEMPTS: Attempts to deliver to one user when Telegram asks to retry later.
+    :cvar _MAX_ATTEMPTS: Attempts to deliver to one user when Telegram asks to retry later or the
+        connection fails.
+    :cvar _NETWORK_RETRY_DELAY: Pause before retrying a delivery that failed on the network.
     """
 
     _SEND_INTERVAL: float = 1 / 25
     _MAX_ATTEMPTS: int = 3
+    _NETWORK_RETRY_DELAY: float = 1
 
     # pylint: disable=too-many-arguments
     def __init__(
@@ -138,7 +141,8 @@ class ForecastService(BaseService):
         Puts a weather report into one user's dialog message.
 
         A user who blocked the bot (or whose account is gone) is deleted, as there is no way to
-        reach them anymore.
+        reach them anymore. Flood control and network failures are retried a few times before the
+        user is skipped until the next update.
 
         :param user: The user.
         :param photo: Forecast image.
@@ -155,6 +159,9 @@ class ForecastService(BaseService):
             except TelegramRetryAfter as e:
                 logger.warning(f"Flood control while updating user {user.user_id}, retrying in {e.retry_after}s")
                 await sleep(e.retry_after)
+            except TelegramNetworkError as e:
+                logger.warning(f"Network error while updating user {user.user_id} ({e.message}), retrying")
+                await sleep(self._NETWORK_RETRY_DELAY)
             except TelegramForbiddenError as e:
                 logger.info(f"User {user.user_id} is unreachable ({e.message}), deleting")
                 await self._db.delete_user(user_id=user.user_id)
