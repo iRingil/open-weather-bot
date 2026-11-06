@@ -67,7 +67,7 @@
 
 A Telegram bot that shows the weather forecast for a city of your choice and keeps it up to date.
 
-<img align="right" width="300" src="https://raw.githubusercontent.com/iRingil/iRingil/refs/heads/main/assets/img/projects/OpenWeatherBot/screenshot_en.png" alt="open-weather-bot home screen">
+<img align="right" width="300" src="src/tgbot/assets/img/screenshot.png" alt="open-weather-bot home screen">
 
 ### Features
 
