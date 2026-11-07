@@ -1,10 +1,12 @@
 """This module contains business logic of the weather setup dialog."""
 
 from asyncio import sleep
+from contextlib import suppress
 from typing import Any
 
 from aiogram import Bot
 from aiogram.enums import ChatAction
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import BufferedInputFile, CallbackQuery, InlineKeyboardMarkup, Message, ReplyKeyboardMarkup
 from loguru import logger
@@ -82,15 +84,20 @@ class DialogService(BaseService):
         await self._delete_user_msg(message=message)
         user_id: int = message.chat.id
         locale: str = self._locale(user=message.from_user)
+        bot: Bot = message.bot  # type: ignore [assignment]
         old_dialog_id: int | None = await self._db.get_dialog_id(user_id=user_id)
         await self._db.delete_user(user_id=user_id)
         await self._replace_dialog(
-            bot=message.bot,  # type: ignore [arg-type]
+            bot=bot,
             chat_id=user_id,
-            old_msg_id=old_dialog_id,
+            old_msg_id=None,
             caption=await self._tmpl.render(tmpl=self._msg_enter_city, locale=locale, data={"greeting": True}),
             reply_markup=await self._kb.geolocation(locale=locale),
         )
+        if old_dialog_id is not None:
+            # The user may have cleared the chat already: nothing to report then
+            with suppress(TelegramBadRequest):
+                await bot.delete_message(chat_id=user_id, message_id=old_dialog_id)
         await state.set_state(WeatherSetupStates.wait_for_city)
 
     async def process_city(self, message: Message, state: FSMContext) -> None:

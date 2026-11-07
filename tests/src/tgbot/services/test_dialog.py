@@ -12,6 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, create_autospec, patch
 
 import pytest
 from aiogram.enums import ChatAction
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -25,7 +26,7 @@ from weather.client import WeatherAPI
 from weather.data_types import CityData
 from weather.reporter import WeatherReport, WeatherReporter
 
-from ..helpers import USER_ID, make_call, make_message
+from ..helpers import USER_ID, make_call, make_message, telegram_method
 
 __all__: tuple = ()
 
@@ -114,6 +115,55 @@ class TestStart:
         assert deleted == [7, 50]
         assert await state.get_state() == WeatherSetupStates.wait_for_city.state
         assert await state.get_data() == {}
+
+    async def test_missing_old_dialog_is_skipped_silently(
+        self, service: DialogService, bot: MagicMock, db: MagicMock, state: FSMContext
+    ) -> None:
+        """
+        An old dialog message the user already deleted is skipped without logging, and the
+        dialog still starts.
+
+        :param service: The DialogService under test.
+        :param bot: The mocked Bot.
+        :param db: The mocked Database.
+        :param state: The FSM context.
+        :return: None
+        """
+
+        async def delete_message(chat_id: int, message_id: int) -> bool:
+            """
+            Fake delete: the old dialog message (50) is gone, the rest is deleted.
+
+            :param chat_id: The chat ID.
+            :param message_id: The message ID.
+            :return: True.
+            """
+            if message_id == 50:
+                raise TelegramBadRequest(method=telegram_method(), message="Bad Request: message to delete not found")
+            return chat_id == USER_ID
+
+        bot.delete_message.side_effect = delete_message
+        with patch("tgbot.services.common.logger") as common_logger:
+            await service.start(message=make_message(message_id=7, text="/start", bot=bot), state=state)
+        common_logger.debug.assert_not_called()
+        db.save_dialog_id.assert_awaited_once_with(user_id=USER_ID, dialog_id=100)
+        assert await state.get_state() == WeatherSetupStates.wait_for_city.state
+
+    async def test_no_old_dialog(
+        self, service: DialogService, bot: MagicMock, db: MagicMock, state: FSMContext
+    ) -> None:
+        """
+        A user without a dialog message only gets the command deleted.
+
+        :param service: The DialogService under test.
+        :param bot: The mocked Bot.
+        :param db: The mocked Database.
+        :param state: The FSM context.
+        :return: None
+        """
+        db.get_dialog_id.return_value = None
+        await service.start(message=make_message(message_id=7, text="/start", bot=bot), state=state)
+        assert [c.kwargs["message_id"] for c in bot.delete_message.await_args_list] == [7]
 
 
 class TestProcessCity:
