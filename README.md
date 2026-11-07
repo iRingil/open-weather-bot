@@ -55,8 +55,8 @@
     <a href="https://github.com/iRingil/open-weather-bot/actions/workflows/codeql.yml">
         <img src="https://github.com/iRingil/open-weather-bot/actions/workflows/codeql.yml/badge.svg" alt="CodeQL">
     </a>
-    <a href="https://github.com/iRingil/open-weather-bot/blob/master/LICENCE.md">
-        <img src="https://img.shields.io/badge/licence-MIT-success" alt="MIT licence">
+    <a href="https://github.com/iRingil/open-weather-bot/blob/master/LICENSE.md">
+        <img src="https://img.shields.io/badge/license-MIT-success" alt="MIT license">
     </a>
 </p>
 
@@ -155,6 +155,6 @@ pytest -c pyproject.toml tests --cov --cov-fail-under=100
 
 ### Licenses
 
-* The source code of **Open Weather Bot** is available under the [MIT](https://github.com/iRingil/open-weather-bot/blob/master/LICENCE.md) license
+* The source code of **Open Weather Bot** is available under the [MIT](https://github.com/iRingil/open-weather-bot/blob/master/LICENSE.md) license
 * Weather data provided by [OpenWeather](https://openweathermap.org/)
 * Weather icons by [www.wishforge.games](https://freeicons.io/profile/2257) on [freeicons.io](https://freeicons.io/)
