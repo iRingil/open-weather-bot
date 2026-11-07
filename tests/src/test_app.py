@@ -322,7 +322,7 @@ class TestOnStartup:
 
 
 class TestOnShutdown:
-    """Tests for Application._on_shutdown: webhook teardown, session/storage/http/db close, scheduler stop."""
+    """Tests for Application._on_shutdown: webhook teardown, storage/http/db close, scheduler stop."""
 
     async def test_deletes_the_webhook_when_configured(
         self, application: Application, classes: SimpleNamespace, config: MagicMock
@@ -354,26 +354,17 @@ class TestOnShutdown:
         await application._on_shutdown()
         classes.Bot.return_value.delete_webhook.assert_not_awaited()
 
-    async def test_closes_the_bot_session_when_present(self, application: Application) -> None:
+    async def test_leaves_the_bot_session_to_aiogram(self, application: Application) -> None:
         """
-        A live aiohttp session on the bot is closed.
+        The bot session is not closed here: aiogram closes it after the shutdown hook, and closing
+        it earlier would cut the pending long-polling request.
 
         :param application: The Application fixture.
         :return: None
         """
         application._bot.session = AsyncMock()
         await application._on_shutdown()
-        application._bot.session.close.assert_awaited_once()
-
-    async def test_skips_closing_the_session_when_absent(self, application: Application) -> None:
-        """
-        No live session means nothing is closed, and this doesn't raise.
-
-        :param application: The Application fixture.
-        :return: None
-        """
-        application._bot.session = None  # type: ignore[assignment]
-        await application._on_shutdown()
+        application._bot.session.close.assert_not_awaited()
 
     async def test_closes_storage_http_and_database_and_stops_the_scheduler(
         self, application: Application, classes: SimpleNamespace

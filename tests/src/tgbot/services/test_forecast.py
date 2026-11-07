@@ -3,8 +3,8 @@ Unit tests for src/tgbot/services/forecast.py (ForecastService).
 
 Bot, Database and WeatherReporter are autospecced mocks (see ../conftest.py); asyncio.sleep is
 patched out in every test, so neither the per-send pause nor a flood-control wait slows the
-suite down. The Bot's edit_message_media returns a photo Message whose largest size has file_id
-"edited" - the ID the service should reuse for the rest of a location.
+suite down. The Bot's send_photo returns a photo Message (ID 100) whose largest size has file_id
+"sent" - the ID the service should reuse for the rest of a location.
 """
 
 # pylint: disable=protected-access
@@ -141,17 +141,16 @@ class TestUpdateAll:
             (49.84, Units.METRIC, "ru"),
         ]
         assert reporter.caption.await_count == 5
-        delivered = [
-            (c.kwargs["chat_id"], c.kwargs["message_id"], c.kwargs["media"].caption)
-            for c in bot.edit_message_media.await_args_list
-        ]
+        delivered = [(c.kwargs["chat_id"], c.kwargs["caption"]) for c in bot.send_photo.await_args_list]
         assert delivered == [
-            (1, 10, "Kyiv|metric|ru"),
-            (2, 20, "Kyiv|metric|ru"),
-            (3, 30, "Kyiv|metric|uk"),
-            (4, 40, "Kyiv|imperial|ru"),
-            (5, 50, "Lviv|metric|ru"),
+            (1, "Kyiv|metric|ru"),
+            (2, "Kyiv|metric|ru"),
+            (3, "Kyiv|metric|uk"),
+            (4, "Kyiv|imperial|ru"),
+            (5, "Lviv|metric|ru"),
         ]
+        deleted = [(c.kwargs["chat_id"], c.kwargs["message_id"]) for c in bot.delete_message.await_args_list]
+        assert deleted == [(1, 10), (2, 20), (3, 30), (4, 40), (5, 50)]
 
     async def test_reuses_uploaded_file_id(self, service: ForecastService, db: MagicMock, bot: MagicMock) -> None:
         """
@@ -164,9 +163,9 @@ class TestUpdateAll:
         """
         db.get_all_user_settings.return_value = [_user(1), _user(2, lang="uk"), _user(3, city="Lviv")]
         await service.update_all()
-        media = [c.kwargs["media"].media for c in bot.edit_message_media.await_args_list]
+        media = [c.kwargs["photo"] for c in bot.send_photo.await_args_list]
         assert isinstance(media[0], BufferedInputFile)
-        assert media[1] == "edited"
+        assert media[1] == "sent"
         assert isinstance(media[2], BufferedInputFile)  # Another location: its own upload
 
     async def test_no_forecast_keeps_previous_report(
@@ -185,8 +184,8 @@ class TestUpdateAll:
         db.get_all_user_settings.return_value = [_user(1), _user(2, city="Lviv")]
         await service.update_all()
         assert [c.kwargs["latitude"] for c in reporter.current_weather.await_args_list] == [49.84]
-        assert [c.kwargs["chat_id"] for c in bot.edit_message_media.await_args_list] == [2]
-        bot.send_photo.assert_not_awaited()
+        assert [c.kwargs["chat_id"] for c in bot.send_photo.await_args_list] == [2]
+        assert [c.kwargs["chat_id"] for c in bot.delete_message.await_args_list] == [2]
 
     async def test_no_current_weather_keeps_previous_report(
         self, service: ForecastService, db: MagicMock, reporter: MagicMock, bot: MagicMock
@@ -204,9 +203,9 @@ class TestUpdateAll:
         reporter.current_weather.side_effect = [None, MagicMock()]
         db.get_all_user_settings.return_value = [_user(1), _user(2), _user(3, lang="uk")]
         await service.update_all()
-        assert [c.kwargs["chat_id"] for c in bot.edit_message_media.await_args_list] == [3]
+        assert [c.kwargs["chat_id"] for c in bot.send_photo.await_args_list] == [3]
         assert reporter.caption.await_count == 1
-        bot.send_photo.assert_not_awaited()
+        assert [c.kwargs["chat_id"] for c in bot.delete_message.await_args_list] == [3]
 
     async def test_failing_location_does_not_stop_others(
         self, service: ForecastService, db: MagicMock, reporter: MagicMock, bot: MagicMock
@@ -223,7 +222,7 @@ class TestUpdateAll:
         reporter.forecast_image.side_effect = [RuntimeError("boom"), b"png"]
         db.get_all_user_settings.return_value = [_user(1), _user(2, city="Lviv")]
         await service.update_all()
-        assert [c.kwargs["chat_id"] for c in bot.edit_message_media.await_args_list] == [2]
+        assert [c.kwargs["chat_id"] for c in bot.send_photo.await_args_list] == [2]
 
     async def test_no_users(self, service: ForecastService, reporter: MagicMock) -> None:
         """
@@ -240,21 +239,42 @@ class TestUpdateAll:
 class TestDeliver:
     """Tests ForecastService._deliver."""
 
-    async def test_success_pauses_between_sends(
-        self, service: ForecastService, bot: MagicMock, fake_sleep: AsyncMock
+    # pylint: disable=too-many-arguments
+    async def test_success_sends_new_and_deletes_previous(
+        self, service: ForecastService, bot: MagicMock, db: MagicMock, fake_sleep: AsyncMock
     ) -> None:
         """
-        A delivered report returns the message and pauses for the broadcast interval.
+        A report is sent as a new silent message that becomes the dialog message, the previous one
+        is deleted, and the broadcast pauses for its interval.
 
         :param service: The ForecastService under test.
         :param bot: The mocked Bot.
+        :param db: The mocked Database.
         :param fake_sleep: The patched sleep.
         :return: None
         """
         msg = await service._deliver(user=_user(1), photo="file", caption="cap")
-        assert msg is not None and msg.message_id == 50
+        assert msg is not None and msg.message_id == 100
+        bot.send_photo.assert_awaited_once()
+        assert bot.send_photo.await_args.kwargs["disable_notification"] is True
+        bot.edit_message_media.assert_not_awaited()
+        db.save_dialog_id.assert_awaited_once_with(user_id=1, dialog_id=100)
+        bot.delete_message.assert_awaited_once_with(chat_id=1, message_id=10)
         fake_sleep.assert_awaited_once_with(1 / 25)
-        bot.edit_message_media.assert_awaited_once()
+
+    async def test_failed_delete_of_previous_does_not_resend(self, service: ForecastService, bot: MagicMock) -> None:
+        """
+        A Telegram error while deleting the previous message is only logged: the new report is
+        already delivered, so it is neither retried nor sent twice.
+
+        :param service: The ForecastService under test.
+        :param bot: The mocked Bot.
+        :return: None
+        """
+        bot.delete_message.side_effect = TelegramNetworkError(method=telegram_method(), message="Request timeout")
+        msg = await service._deliver(user=_user(1), photo="file", caption="cap")
+        assert msg is not None and msg.message_id == 100
+        bot.send_photo.assert_awaited_once()
 
     async def test_forbidden_deletes_user(self, service: ForecastService, bot: MagicMock, db: MagicMock) -> None:
         """
@@ -265,7 +285,7 @@ class TestDeliver:
         :param db: The mocked Database.
         :return: None
         """
-        bot.edit_message_media.side_effect = TelegramForbiddenError(
+        bot.send_photo.side_effect = TelegramForbiddenError(
             method=telegram_method(), message="Forbidden: bot was blocked by the user"
         )
         assert await service._deliver(user=_user(1), photo="file", caption="cap") is None
@@ -282,8 +302,8 @@ class TestDeliver:
         :param fake_sleep: The patched sleep.
         :return: None
         """
-        ok = bot.edit_message_media.return_value
-        bot.edit_message_media.side_effect = [
+        ok = bot.send_photo.return_value
+        bot.send_photo.side_effect = [
             TelegramRetryAfter(method=telegram_method(), message="Too Many Requests", retry_after=7),
             ok,
         ]
@@ -299,11 +319,11 @@ class TestDeliver:
         :param db: The mocked Database.
         :return: None
         """
-        bot.edit_message_media.side_effect = TelegramRetryAfter(
+        bot.send_photo.side_effect = TelegramRetryAfter(
             method=telegram_method(), message="Too Many Requests", retry_after=1
         )
         assert await service._deliver(user=_user(1), photo="file", caption="cap") is None
-        assert bot.edit_message_media.await_count == 3
+        assert bot.send_photo.await_count == 3
         db.delete_user.assert_not_awaited()
 
     async def test_network_error_then_success(
@@ -317,8 +337,8 @@ class TestDeliver:
         :param fake_sleep: The patched sleep.
         :return: None
         """
-        ok = bot.edit_message_media.return_value
-        bot.edit_message_media.side_effect = [
+        ok = bot.send_photo.return_value
+        bot.send_photo.side_effect = [
             TelegramNetworkError(method=telegram_method(), message="ClientOSError: Can not write request body"),
             ok,
         ]
@@ -334,25 +354,22 @@ class TestDeliver:
         :param db: The mocked Database.
         :return: None
         """
-        bot.edit_message_media.side_effect = TelegramNetworkError(
-            method=telegram_method(), message="Request timeout error"
-        )
+        bot.send_photo.side_effect = TelegramNetworkError(method=telegram_method(), message="Request timeout error")
         assert await service._deliver(user=_user(1), photo="file", caption="cap") is None
-        assert bot.edit_message_media.await_count == 3
+        assert bot.send_photo.await_count == 3
         db.delete_user.assert_not_awaited()
 
     async def test_other_api_error_is_swallowed(self, service: ForecastService, bot: MagicMock, db: MagicMock) -> None:
         """
-        Any other Telegram error (here the fallback send failing) skips the user.
+        Any other Telegram error skips the user and keeps the previous report.
 
         :param service: The ForecastService under test.
         :param bot: The mocked Bot.
         :param db: The mocked Database.
         :return: None
         """
-        bot.edit_message_media.side_effect = TelegramBadRequest(
-            method=telegram_method(), message="message to edit not found"
-        )
         bot.send_photo.side_effect = TelegramBadRequest(method=telegram_method(), message="chat not found")
         assert await service._deliver(user=_user(1), photo="file", caption="cap") is None
         db.delete_user.assert_not_awaited()
+        db.save_dialog_id.assert_not_awaited()
+        bot.delete_message.assert_not_awaited()

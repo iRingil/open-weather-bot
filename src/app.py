@@ -97,15 +97,15 @@ class Application:
 
         Stops the scheduler first, waiting for an in-flight weather update to finish
         (Scheduler.shutdown's default wait=True) before closing anything it might still be using -
-        FSM storage (Redis), the shared HTTP client, and the database.
+        FSM storage (Redis), the shared HTTP client, and the database. The bot session is left to
+        aiogram, which closes it after this hook: closing it here would cut the long-polling
+        request that is still waiting for updates.
 
         :return: None
         """
         self._scheduler.shutdown()
         if self._config.webhook:
             await self._bot.delete_webhook()
-        if self._bot.session is not None:
-            await self._bot.session.close()
         await self._dp.storage.close()
         await self._http.close()
         await self._db.close()

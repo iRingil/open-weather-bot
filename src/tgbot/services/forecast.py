@@ -138,22 +138,24 @@ class ForecastService(BaseService):
 
     async def _deliver(self, user: UserSettings, photo: PhotoSource, caption: str) -> Message | None:
         """
-        Puts a weather report into one user's dialog message.
+        Sends a weather report to one user as a new silent dialog message and deletes the previous one.
 
-        A user who blocked the bot (or whose account is gone) is deleted, as there is no way to
-        reach them anymore. Flood control and network failures are retried a few times before the
-        user is skipped until the next update.
+        A new message instead of an edit keeps the dialog message younger than Telegram's 48-hour
+        delete limit, so '/stop' and the dialog steps can always remove it. A user who blocked the
+        bot (or whose account is gone) is deleted, as there is no way to reach them anymore. Flood
+        control and network failures are retried a few times before the user is skipped until the
+        next update.
 
         :param user: The user.
         :param photo: Forecast image.
         :param caption: Current weather caption.
-        :return: The updated or new dialog message, or None if nothing was delivered.
+        :return: The new dialog message, or None if nothing was delivered.
         """
         for _ in range(self._MAX_ATTEMPTS):
             try:
-                msg: Message | None = await self._edit_or_send_msg(
-                    bot=self._bot, chat_id=user.user_id, msg_id=user.dialog_id, caption=caption, photo=photo
-                )
+                msg: Message = await self._send_photo(bot=self._bot, chat_id=user.user_id, caption=caption, photo=photo)
+                await self._db.save_dialog_id(user_id=user.user_id, dialog_id=msg.message_id)
+                await self._drop_previous_report(user=user)
                 await sleep(self._SEND_INTERVAL)
                 return msg
             except TelegramRetryAfter as e:
@@ -170,3 +172,18 @@ class ForecastService(BaseService):
                 logger.warning(f"Failed to update user {user.user_id}: {e.message}")
                 return None
         return None
+
+    async def _drop_previous_report(self, user: UserSettings) -> None:
+        """
+        Deletes the user's previous dialog message after a new report was sent.
+
+        Never raises a Telegram error: the new report is already delivered and saved, so a retry
+        would only send it twice. A message that stays behind is logged.
+
+        :param user: The user, with the ID of the previous dialog message.
+        :return: None
+        """
+        try:
+            await self._delete_msg(bot=self._bot, chat_id=user.user_id, msg_id=user.dialog_id)
+        except TelegramAPIError as e:
+            logger.warning(f"Previous report {user.dialog_id} of user {user.user_id} was not deleted: {e.message}")
