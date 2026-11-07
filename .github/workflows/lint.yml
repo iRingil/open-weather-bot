@@ -1,0 +1,44 @@
+name: Lint
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [ "master" ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - '.github/workflows/**'
+  pull_request:
+    branches: [ "master" ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - '.github/workflows/**'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      # basedpyright reads the project's packages from .venv (see [tool.basedpyright] in pyproject.toml).
+      # Ruff and basedpyright are installed globally on dev machines, so their versions are pinned here.
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/pip install -r src/requirements-dev.txt ruff==0.17.4 basedpyright==1.40.2
+      - name: Ruff
+        run: |
+          .venv/bin/ruff check src tests
+          .venv/bin/ruff format --check src tests
+      - name: basedpyright
+        run: |
+          .venv/bin/basedpyright

@@ -43,14 +43,11 @@
     </a>
 </p>
 <p align="center">
-    <a href="https://github.com/psf/black">
-        <img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-black.svg">
+    <a href="https://github.com/astral-sh/ruff">
+        <img alt="Ruff" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json">
     </a>
-    <a href="https://github.com/iRingil/open-weather-bot/actions/workflows/mypy.yml">
-        <img src="https://github.com/iRingil/open-weather-bot/actions/workflows/mypy.yml/badge.svg" alt="Mypy">
-    </a>
-    <a href="https://github.com/iRingil/open-weather-bot/actions/workflows/pylint.yml">
-        <img src="https://github.com/iRingil/open-weather-bot/actions/workflows/pylint.yml/badge.svg" alt="Pylint">
+    <a href="https://github.com/iRingil/open-weather-bot/actions/workflows/lint.yml">
+        <img src="https://github.com/iRingil/open-weather-bot/actions/workflows/lint.yml/badge.svg" alt="Lint">
     </a>
     <a href="https://github.com/iRingil/open-weather-bot/actions/workflows/pytest.yml">
         <img src="https://github.com/iRingil/open-weather-bot/actions/workflows/pytest.yml/badge.svg" alt="Pytest">
@@ -146,10 +143,10 @@ do the same.
 
 ```bash
 pip install -r src/requirements-dev.txt
-pylint --rcfile=pyproject.toml --recursive=y src tests
-mypy --config-file=pyproject.toml src tests
+ruff check src tests          # lint (Ruff, installed globally - version pinned in .github/workflows/lint.yml)
+ruff format src tests         # format
+basedpyright                  # type check (installed globally, reads the packages from .venv)
 pytest -c pyproject.toml tests --cov --cov-fail-under=100
-black -l 120 src tests
 ```
 
 ### Developers
