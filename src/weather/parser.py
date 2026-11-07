@@ -138,11 +138,13 @@ class WeatherParser:
         Extracts the precipitation over the last hour - snow if reported, otherwise rain.
 
         :param raw: Validated current weather response.
-        :return: Precipitation in millimeters, or None if there was none or it is malformed.
+        :return: Precipitation in millimeters, or None if there was none, or it is malformed.
         """
         block: object = raw.snow or raw.rain
         if not isinstance(block, dict):
             return None
+        # basedpyright needs the cast: isinstance(..., dict) only gives dict[Unknown, Unknown]
+        # noinspection PyUnnecessaryCast
         return cls._optional_number(cast("dict[str, object]", block).get("1h"))
 
     @staticmethod

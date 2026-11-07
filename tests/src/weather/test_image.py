@@ -201,6 +201,8 @@ class TestDraw:
         assert image.size == (799, 199)
         assert _rgb(image, (750, 100)) == (0x26, 0x26, 0x26)
 
+    # Grazie takes 'fit' for the verb of the sentence; 'are' agrees with 'Steps'
+    # noinspection GrazieInspection
     def test_extra_points_are_ignored(self, renderer: ForecastImage) -> None:
         """
         Steps beyond the 8 that fit are not drawn (and don't fail).

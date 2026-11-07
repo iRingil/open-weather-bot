@@ -25,7 +25,7 @@ typeCheckingMode = "all"
 venvPath = "."
 venv = ".venv"
 reportMissingTypeStubs = false  # asyncpg and APScheduler ship no type information
-reportUnusedCallResult = false  # Results such as the sent Message are used only where needed
+reportUnusedCallResult = false  # A returned value (e.g. the Message) is used only where needed
 reportImplicitStringConcatenation = false  # Contradicts Ruff ISC003, which prefers implicit concatenation to "+"
 
 [[tool.basedpyright.executionEnvironments]]

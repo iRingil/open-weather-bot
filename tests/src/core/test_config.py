@@ -2,12 +2,11 @@
 Unit tests for src/core/config.py (CoreConfig, PostgresConfig).
 
 Every test builds its own throwaway .env file under pytest's tmp_path fixture and passes it as
-CoreConfig's base_dir - never touches the real project .env (which holds live secrets, is
-gitignored, and won't exist on a fresh CI checkout - that's exactly what would make these tests
-fail on GitHub if they read it). Combined with tests/conftest.py's isolated_environ fixture, each
-test is hermetic: it doesn't depend on run order or on anything set in the real environment. Redis
-is never actually connected to either - Config only builds a lazy redis.asyncio.Redis client
-object, it never connects.
+CoreConfig's base_dir. The real project .env is never touched: it holds live secrets, is gitignored
+and won't exist on a fresh CI checkout, so tests reading it would fail on GitHub. Combined with
+tests/conftest.py's isolated_environ fixture, each test is hermetic: it doesn't depend on run order
+or on anything set in the real environment. Redis is never actually connected to either - Config
+only builds a lazy redis.asyncio.Redis client object, it never connects.
 """
 
 # ruff: noqa: PLR2004, S101, S105
@@ -364,7 +363,7 @@ class TestRedis:
     """
     Tests for CoreConfig.redis / _get_redis.
 
-    Redis is unconditionally required, like postgres - there's no opt-in flag to skip building a
+    Redis is unconditionally required, like Postgres - there's no opt-in flag to skip building a
     connection.
     """
 

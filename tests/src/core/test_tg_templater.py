@@ -1,11 +1,11 @@
 """
 Unit tests for src/core/tg_templater.py (TgTemplater).
 
-Real Jinja2 templates and real compiled Babel .mo catalogs are built on disk under pytest's
-tmp_path fixture for every render() test - nothing about Jinja2's i18n extension or Babel's
-gettext lookup is mocked, since TgTemplater's whole value is in wiring those two together
-correctly. Catalogs are compiled in-process via babel.messages (Catalog + write_mo), so the suite
-never shells out to msgfmt/pybabel and stays fast and self-contained.
+Real Jinja2 templates and real compiled Babel .mo catalogs are built on disk under pytest's tmp_path
+fixture for every render() test. Neither Jinja2's i18n extension nor Babel's gettext lookup is
+mocked: TgTemplater's whole value is in wiring those two together correctly. Catalogs are compiled
+in-process via babel.messages (Catalog + write_mo), so the suite never shells out to msgfmt/pybabel
+and stays fast and self-contained.
 """
 
 # ruff: noqa: S101, SLF001
@@ -432,8 +432,10 @@ class TestRender:
         _compile_translations(locale_dir=locale_dir, locale="ru", translations={"Hello": "Privet"})
         tmpl: TgTemplater = TgTemplater(templates_dir=templates_dir, locale_dir=locale_dir)
 
-        results: list[str] = await asyncio.gather(
-            *(tmpl.render(tmpl="greet.jinja2", locale="ru" if i % 2 == 0 else "en") for i in range(20))
+        results: list[str] = list(
+            await asyncio.gather(
+                *(tmpl.render(tmpl="greet.jinja2", locale="ru" if i % 2 == 0 else "en") for i in range(20))
+            )
         )
 
         assert all(result == "Privet" for result in results[0::2])

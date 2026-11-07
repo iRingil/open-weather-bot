@@ -35,6 +35,7 @@ class TgTemplater:
         self._locale: Path = locale_dir
         self._translations: dict[str, NullTranslations] = {}
         # Added to the environment at runtime by the jinja2.ext.i18n extension
+        # noinspection PyUnresolvedReferences
         self._env.install_gettext_callables(  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
             gettext=self._gettext, ngettext=self._ngettext
         )

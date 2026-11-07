@@ -30,8 +30,8 @@ class WeatherReporter:
     Builds weather reports.
 
     The forecast image depends only on the location and units, and the current weather only on the
-    location, units and language - so these are separate steps a caller can share between users,
-    while the caption (which also shows each user's own city name) is rendered per user.
+    location, units and language. So these are separate steps a caller can share between users. The
+    caption also shows each user's own city name, so it is rendered per user.
 
     :cvar _tmpl_current_weather: Path to the current weather caption template.
     :cvar _tmpl_current_weather_failed: Path to the "current weather unavailable" caption template.

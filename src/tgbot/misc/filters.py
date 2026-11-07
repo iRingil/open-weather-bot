@@ -20,6 +20,8 @@ class UserIsAdmin(BaseFilter):
         super().__init__()
         self.admins_ids: list[int] = admins_ids
 
+    # BaseFilter declares __call__ as an abstract method at runtime; PyCharm only sees its TYPE_CHECKING stub
+    # noinspection PyOverrides
     @override
     async def __call__(self, obj: CallbackQuery | Message) -> bool:
         """

@@ -195,6 +195,8 @@ class TestProcessCity:
         assert await state.get_state() == WeatherSetupStates.wait_for_city_choice.state
         assert await state.get_data() == {"cities": [_KYIV._asdict(), _LVIV._asdict()]}
 
+    # Grazie misreads the past participle 'sent' as a misspelled 'scent'
+    # noinspection GrazieInspection
     async def test_location_uses_reverse_geocoding(
         self, service: DialogService, bot: MagicMock, api: MagicMock, state: FSMContext
     ) -> None:

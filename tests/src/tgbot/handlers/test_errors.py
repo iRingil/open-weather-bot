@@ -1,7 +1,7 @@
 """
 Unit tests for src/tgbot/handlers/errors.py (ErrHandler).
 
-ErrService.log_exception is the only collaborator (patched as an AsyncMock) - it has its own full
+ErrService.log_exception is the only collaborator (patched as an AsyncMock). It has its own full
 test suite in tests/src/tgbot/services/test_errors.py, so this suite only checks that handle()
 delegates to it with the right event, not what logging it produces. The ErrorEvent itself is built
 as a real aiogram object (a cheap pydantic model, no network calls).

@@ -96,11 +96,11 @@ class WeatherFormatter:
         """
         metric: bool = units == Units.METRIC
         precipitation: float | None = None
-        if data.precipitation:
-            precipitation = round(data.precipitation if metric else data.precipitation / cls._MM_PER_INCH, 2)
+        if millimeters := data.precipitation:
+            precipitation = round(millimeters if metric else millimeters / cls._MM_PER_INCH, 2)
         visibility: float | None = None
-        if data.visibility:
-            visibility = round(data.visibility / (1000 if metric else cls._METERS_PER_MILE), 1)
+        if meters := data.visibility:
+            visibility = round(meters / (1000 if metric else cls._METERS_PER_MILE), 1)
         return {
             "city": city,
             "time": cls.format_time(time=data.time, lang=lang),

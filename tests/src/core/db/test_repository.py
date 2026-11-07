@@ -270,7 +270,7 @@ class TestGetAllUserSettings:
 
     async def test_returns_an_empty_list_without_rows(self, db: Database) -> None:
         """
-        No rows means an empty list.
+        An empty result gives an empty list.
 
         :param db: The Database fixture.
         :return: None

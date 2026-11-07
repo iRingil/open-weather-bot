@@ -137,6 +137,8 @@ class BaseService:
         if bot is not None:
             await self._delete_msg(bot=bot, chat_id=message.chat.id, msg_id=message.message_id)
 
+    # Grazie misreads the past participle 'sent' as a misspelled 'scent'
+    # noinspection GrazieInspection
     async def _send_photo(
         self,
         bot: Bot,

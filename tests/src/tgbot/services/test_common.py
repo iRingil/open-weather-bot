@@ -82,6 +82,8 @@ class TestLocale:
 class TestLogo:
     """Tests BaseService._logo / _remember_logo."""
 
+    # Grazie misreads the past participle 'sent' as a misspelled 'scent'
+    # noinspection GrazieInspection
     def test_uploads_file_until_remembered(self, service: BaseService, config: MagicMock) -> None:
         """
         The logo is uploaded once, then reused by file_id.

@@ -130,7 +130,6 @@ class TestNoResolvableUser:
 
         :param middleware: The AntiFloodMiddleware fixture.
         :param handler: The handler spy fixture.
-        :param clock: The fake clock fixture (unused directly - no throttling happens at all).
         :return: None
         """
         data: dict[str, Any] = _user_data(user_id=None)

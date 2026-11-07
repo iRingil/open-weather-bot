@@ -327,8 +327,8 @@ class TestRateLimit:
             sleeps.append(delay)
             clock[0] += delay
 
-        monkeypatch.setattr(client_module, "monotonic", lambda: clock[0])
-        monkeypatch.setattr(client_module, "sleep", fake_sleep)
+        monkeypatch.setattr(target=client_module, name="monotonic", value=lambda: clock[0])
+        monkeypatch.setattr(target=client_module, name="sleep", value=fake_sleep)
         await api.get_forecast(latitude=1, longitude=2, units=Units.METRIC)
         clock[0] += 0.25
         await api.get_forecast(latitude=1, longitude=2, units=Units.METRIC)

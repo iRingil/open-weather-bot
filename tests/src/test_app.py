@@ -169,7 +169,6 @@ class TestInit:
         core=None (the default) builds a fresh CoreConfig instead.
 
         :param classes: The patched-classes fixture.
-        :param config: The mocked Config fixture (unused directly, but needed so Config() resolves).
         :return: None
         """
         application: Application = Application()
@@ -181,7 +180,6 @@ class TestInit:
         """
         Config is built from the resolved CoreConfig.
 
-        :param application: The Application fixture.
         :param classes: The patched-classes fixture.
         :param core: The mocked CoreConfig fixture.
         :return: None
@@ -193,7 +191,6 @@ class TestInit:
         """
         The bot is built with the config's token and HTML parse mode, replying/link-previews relaxed.
 
-        :param application: The Application fixture.
         :param classes: The patched-classes fixture.
         :return: None
         """
@@ -214,7 +211,6 @@ class TestInit:
         prefixed for this bot - there's no in-memory fallback, since Redis is mandatory
         infrastructure.
 
-        :param application: The Application fixture.
         :param classes: The patched-classes fixture.
         :param config: The mocked Config fixture.
         :return: None
@@ -230,7 +226,6 @@ class TestInit:
         """
         The anti-flood middleware is built and registered as an outer middleware on every update.
 
-        :param application: The Application fixture.
         :param classes: The patched-classes fixture.
         :return: None
         """
@@ -249,7 +244,6 @@ class TestInit:
         TgTemplater/KeyboardManager/Database/HttpClient/WeatherAPI/WeatherReporter/ForecastService/
         Scheduler are all built from the right upstream collaborators.
 
-        :param application: The Application fixture.
         :param classes: The patched-classes fixture.
         :param config: The mocked Config fixture.
         :param core: The mocked CoreConfig fixture.
@@ -584,7 +578,6 @@ class TestMain:
         """
         The "stopped" message is logged even on a clean run, via the finally block.
 
-        :param main_classes: The patched CoreConfig/LoggingManager/Application fixture.
         :param captured_records: Fixture capturing every record loguru receives.
         :return: None
         """

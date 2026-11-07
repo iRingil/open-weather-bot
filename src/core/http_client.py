@@ -123,6 +123,8 @@ class HttpClient:
             raw: bytes = await response.read()
             if not response.ok:
                 raise HttpClientError(status=response.status, url=url, body=raw)
+            # basedpyright needs the cast: without it the value is Any (reportAny)
+            # noinspection PyUnnecessaryCast
             parsed: JsonValue = cast("JsonValue", orjson.loads(raw))
             return parsed
 

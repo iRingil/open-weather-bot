@@ -45,7 +45,7 @@ class PostgresClient:
 
         :return: An instance of asyncpg.pool.Pool.
         """
-        pool: Pool | None = self._pool
+        pool = self._pool
         if pool is None:
             pool = await create_pool(dsn=self._db_dsn)
             self._pool = pool
@@ -97,6 +97,8 @@ class PostgresClient:
         """
         pool: Pool = await self._get_pool()
         async with pool.acquire() as conn:
+            # basedpyright needs the cast: without it the value is Any (reportAny)
+            # noinspection PyUnnecessaryCast
             value: object = cast("object", await conn.fetchval(query, *args))
             return value
 

@@ -97,7 +97,7 @@ class TestShutdown:
         shutdown() waits for a running job by default, or not if asked.
 
         :param scheduler: The Scheduler fixture.
-        :param kwargs: Arguments passed to shutdown.
+        :param kwargs: Arguments passed to Scheduler.shutdown().
         :param expected: The wait value expected to reach the underlying scheduler.
         :return: None
         """

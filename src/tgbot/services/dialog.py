@@ -234,9 +234,8 @@ class DialogService(BaseService):
         await self._db.save_user_settings(settings=settings)
         logger.info(f"User {user_id} set up the weather for {city.full_name} ({units})")
         report: WeatherReport = await self._reporter.report(settings=settings)
-        photo: PhotoSource = (
-            BufferedInputFile(file=report.photo, filename="forecast.png") if report.photo else self._logo()
-        )
+        image: bytes | None = report.photo
+        photo: PhotoSource = BufferedInputFile(file=image, filename="forecast.png") if image else self._logo()
         await self._edit_or_send_callback(call=call, caption=report.caption, photo=photo)
         notice: Message = await bot.send_message(
             chat_id=user_id,
