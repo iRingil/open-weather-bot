@@ -7,7 +7,9 @@ replaced at module level with a shared autospecced instance, so each scenario as
 which service method fired - and which did not.
 """
 
-from datetime import datetime, timezone
+# ruff: noqa: S101, S105
+
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, create_autospec
 
 import pytest
@@ -41,6 +43,8 @@ _USER_ID: int = 222
 @pytest.fixture(name="real_bot")
 def real_bot_fixture(monkeypatch: pytest.MonkeyPatch) -> Bot:
     """
+    A real Bot that never calls Telegram.
+
     A real Bot instance with __call__ monkeypatched, so call.answer() inside the real handlers
     resolves without ever hitting Telegram's API.
 
@@ -54,6 +58,8 @@ def real_bot_fixture(monkeypatch: pytest.MonkeyPatch) -> Bot:
 @pytest.fixture(name="services")
 def services_fixture(monkeypatch: pytest.MonkeyPatch) -> dict[str, MagicMock]:
     """
+    Replaces the services with shared autospecced mocks.
+
     Replaces the service classes at module level with factories each returning one shared
     autospecced instance.
 
@@ -120,7 +126,7 @@ def _message(
     """
     return Message(
         message_id=1,
-        date=datetime.now(tz=timezone.utc),
+        date=datetime.now(tz=UTC),
         chat=Chat(id=user_id, type=chat_type),
         from_user=_user(user_id),
         text=text,
@@ -179,8 +185,8 @@ class TestCommands:
             ("/stop", "CommandsService", "stop"),
         ],
     )
-    async def test_commands_win_over_city_input(
-        self, dp: Dispatcher, real_bot: Bot, services: dict[str, MagicMock], text: str, service: str, method: str
+    async def test_commands_win_over_city_input(  # noqa: PLR0913 - fixtures and parameters
+        self, *, dp: Dispatcher, real_bot: Bot, services: dict[str, MagicMock], text: str, service: str, method: str
     ) -> None:
         """
         A command sent while the bot waits for a city runs the command, not a city search.

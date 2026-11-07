@@ -6,8 +6,11 @@ no real external dependency of its own, so there's nothing here that qualifies f
 this suite's usual "mock only at genuine boundaries" rule.
 """
 
+# ruff: noqa: PLR2004, S101
+
 import asyncio
-from typing import Any, Callable, Iterator
+from collections.abc import Callable, Iterator
+from typing import Any
 
 import pytest
 from loguru import logger
@@ -20,7 +23,7 @@ __all__: tuple = ()
 class _ScriptedCalls:
     """An async callable that returns/raises one scripted outcome per call, in order, recording every call's args."""
 
-    def __init__(self, *outcomes: Any, name: str = "_scripted") -> None:
+    def __init__(self, *outcomes: object, name: str = "_scripted") -> None:
         """
         Schedules the outcomes returned/raised by successive calls, in order.
 
@@ -31,7 +34,7 @@ class _ScriptedCalls:
         self.calls: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
         self.__name__: str = name
 
-    async def __call__(self, *args: Any, **kwargs: Any) -> Any:
+    async def __call__(self, *args: object, **kwargs: object) -> object:
         """
         Records the call, then returns or raises the next scripted outcome.
 
@@ -101,6 +104,8 @@ class TestHandleExcException:
         self, captured_records: list
     ) -> None:
         """
+        The failure is logged with a traceback.
+
         The failure is logged at ERROR level, naming the wrapped function and the exception, with a traceback
         attached - via loguru's logger.exception, not a hand-built one.
 
@@ -123,6 +128,8 @@ class TestHandleExcCancellation:
 
     async def test_propagates_cancelled_error_without_catching_or_logging_it(self, captured_records: list) -> None:
         """
+        CancelledError is not swallowed.
+
         CancelledError is a BaseException, not an Exception, so it isn't caught by handle_exc's except Exception
         clause - it passes straight through unhandled and unlogged, letting a canceled task actually finish
         canceled instead of appearing to complete normally.
@@ -153,6 +160,6 @@ class TestPreservesFunctionMetadata:
 
             :return: None
             """
-            return None
+            return
 
         assert _my_task.__name__ == "_my_task"

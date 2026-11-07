@@ -4,6 +4,8 @@ Unit tests for src/weather/image.py (ForecastImage).
 Draws real images with the real bundled font and icons, then inspects them with Pillow.
 """
 
+# ruff: noqa: S101
+
 from io import BytesIO
 from typing import cast
 
@@ -25,7 +27,7 @@ def _rgb(image: Image.Image, xy: tuple[int, int]) -> tuple[int, ...]:
     :param xy: Pixel coordinates.
     :return: (R, G, B).
     """
-    return cast(tuple[int, ...], image.getpixel(xy))[:3]
+    return cast("tuple[int, ...]", image.getpixel(xy))[:3]
 
 
 def _colors(image: Image.Image) -> set[tuple[int, ...]]:
@@ -35,7 +37,7 @@ def _colors(image: Image.Image) -> set[tuple[int, ...]]:
     :param image: Image to read.
     :return: Set of (R, G, B).
     """
-    colors = cast(list[tuple[int, tuple[int, ...]]], image.getcolors(maxcolors=100_000))
+    colors = cast("list[tuple[int, tuple[int, ...]]]", image.getcolors(maxcolors=100_000))
     return {color[1][:3] for color in colors}
 
 

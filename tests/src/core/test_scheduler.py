@@ -5,7 +5,10 @@ The underlying AsyncIOScheduler is replaced with a MagicMock after construction,
 loop or real job store is involved - the tests only check what Scheduler asks of it.
 """
 
-from datetime import timezone
+# ruff: noqa: S101, SLF001
+
+from datetime import UTC
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -14,8 +17,6 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from core.scheduler import Scheduler
 
 __all__: tuple = ()
-
-# pylint: disable=protected-access
 
 
 @pytest.fixture(name="update_weather")
@@ -53,7 +54,7 @@ class TestInit:
         """
         scheduler: Scheduler = Scheduler(update_weather=update_weather)
         assert isinstance(scheduler._instance, AsyncIOScheduler)
-        assert scheduler._instance.timezone == timezone.utc
+        assert scheduler._instance.timezone == UTC
 
 
 class TestStart:
@@ -63,6 +64,8 @@ class TestStart:
         self, scheduler: Scheduler, update_weather: AsyncMock
     ) -> None:
         """
+        The weather update is scheduled every third hour.
+
         The weather update runs at minute 0 of every third hour (UTC), never overlapping itself,
         and the scheduler is started after the job is added.
 
@@ -71,7 +74,7 @@ class TestStart:
         :return: None
         """
         scheduler.start()
-        mock: MagicMock = scheduler._instance  # type: ignore [assignment]
+        mock: MagicMock = cast("MagicMock", scheduler._instance)
         mock.add_job.assert_called_once_with(
             func=update_weather,
             trigger="cron",
@@ -88,8 +91,8 @@ class TestStart:
 class TestShutdown:
     """Tests for Scheduler.shutdown."""
 
-    @pytest.mark.parametrize("kwargs,expected", [({}, True), ({"wait": False}, False)])
-    def test_passes_wait_through(self, scheduler: Scheduler, kwargs: dict[str, bool], expected: bool) -> None:
+    @pytest.mark.parametrize(("kwargs", "expected"), [({}, True), ({"wait": False}, False)])
+    def test_passes_wait_through(self, scheduler: Scheduler, kwargs: dict[str, bool], expected: bool) -> None:  # noqa: FBT001
         """
         shutdown() waits for a running job by default, or not if asked.
 
@@ -99,4 +102,4 @@ class TestShutdown:
         :return: None
         """
         scheduler.shutdown(**kwargs)
-        scheduler._instance.shutdown.assert_called_once_with(wait=expected)  # type: ignore [attr-defined]
+        cast("MagicMock", scheduler._instance).shutdown.assert_called_once_with(wait=expected)

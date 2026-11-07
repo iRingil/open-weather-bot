@@ -2,13 +2,18 @@
 
 import asyncio
 import socket
+from collections.abc import Mapping
 from enum import StrEnum
-from typing import Any
+from http import HTTPStatus
+from typing import cast
 
 import aiohttp
 import orjson
 
-__all__: tuple[str, ...] = ("HttpMethod", "HttpClient", "HttpClientError")
+__all__: tuple[str, ...] = ("HttpClient", "HttpClientError", "HttpMethod", "JsonValue", "QueryParams")
+
+type JsonValue = dict[str, JsonValue] | list[JsonValue] | str | int | float | bool | None
+type QueryParams = Mapping[str, str | int | float]
 
 
 class HttpMethod(StrEnum):
@@ -21,7 +26,7 @@ class HttpMethod(StrEnum):
 class HttpClientError(Exception):
     """HTTP request failed with a non-2xx status code."""
 
-    __slots__ = ("status", "url", "body")
+    __slots__: tuple[str, ...] = ("body", "status", "url")
 
     def __init__(self, status: int, url: str, body: bytes) -> None:
         """
@@ -40,15 +45,15 @@ class HttpClientError(Exception):
 class HttpClient:
     """High-performance wrapper around aiohttp.ClientSession with lazy initialization."""
 
-    __slots__ = ("_pool_limit", "_request_timeout", "_connect_timeout", "_max_retries", "_session")
+    __slots__: tuple[str, ...] = ("_connect_timeout", "_max_retries", "_pool_limit", "_request_timeout", "_session")
 
     _RETRYABLE_METHODS: frozenset[HttpMethod] = frozenset({HttpMethod.GET})
 
     def __init__(
         self,
         pool_limit: int = 100,
-        request_timeout: float | int = 30.0,
-        connect_timeout: float | int = 5.0,
+        request_timeout: float = 30.0,
+        connect_timeout: float = 5.0,
         max_retries: int = 2,
     ) -> None:
         """
@@ -93,7 +98,43 @@ class HttpClient:
         if self._session is not None and not self._session.closed:
             await self._session.close()
 
-    async def _request(self, method: HttpMethod, url: str, **kwargs: Any) -> Any:
+    async def _send(
+        self,
+        method: HttpMethod,
+        url: str,
+        *,
+        params: QueryParams | None,
+        json: JsonValue,
+        data: str | bytes | None,
+    ) -> JsonValue:
+        """
+        Sends one HTTP request and parses its JSON response.
+
+        :param method: HTTP method.
+        :param url: Full URL.
+        :param params: Query string parameters.
+        :param json: JSON request body.
+        :param data: Raw request body.
+        :return: Parsed JSON response.
+        :raise HttpClientError: if the response status is not 2xx.
+        """
+        session: aiohttp.ClientSession = await self._get_session()
+        async with session.request(method=method, url=url, params=params, json=json, data=data) as response:
+            raw: bytes = await response.read()
+            if not response.ok:
+                raise HttpClientError(status=response.status, url=url, body=raw)
+            parsed: JsonValue = cast("JsonValue", orjson.loads(raw))
+            return parsed
+
+    async def _request(
+        self,
+        method: HttpMethod,
+        url: str,
+        *,
+        params: QueryParams | None = None,
+        json: JsonValue = None,
+        data: str | bytes | None = None,
+    ) -> JsonValue:
         """
         Execute a raw HTTP request and return parsed JSON.
 
@@ -104,44 +145,42 @@ class HttpClient:
 
         :param method: HTTP method.
         :param url: Full URL.
-        :param kwargs: Arguments passed directly to aiohttp.
+        :param params: Query string parameters.
+        :param json: JSON request body.
+        :param data: Raw request body.
         :return: Parsed JSON response.
         """
         retries: int = self._max_retries if method in self._RETRYABLE_METHODS else 0
         for attempt in range(retries + 1):
             try:
-                session: aiohttp.ClientSession = await self._get_session()
-                async with session.request(method=method, url=url, **kwargs) as response:
-                    raw: bytes = await response.read()
-                    if not response.ok:
-                        raise HttpClientError(status=response.status, url=url, body=raw)
-                    return orjson.loads(raw)
-            except (aiohttp.ClientConnectionError, asyncio.TimeoutError):
+                return await self._send(method=method, url=url, params=params, json=json, data=data)
+            except (TimeoutError, aiohttp.ClientConnectionError):
                 if attempt == retries:
                     raise
-                await asyncio.sleep(0.5 * 2**attempt)
+                await asyncio.sleep(0.5 * 2.0**attempt)
             except HttpClientError as e:
-                if e.status < 500 or attempt == retries:
+                if e.status < HTTPStatus.INTERNAL_SERVER_ERROR or attempt == retries:
                     raise
-                await asyncio.sleep(0.5 * 2**attempt)
+                await asyncio.sleep(0.5 * 2.0**attempt)
         raise AssertionError("unreachable")  # pragma: no cover
 
-    async def get(self, url: str, **kwargs: Any) -> Any:
+    async def get(self, url: str, params: QueryParams | None = None) -> JsonValue:
         """
         Alias for GET request.
 
         :param url: Full URL.
-        :param kwargs: Arguments passed directly to aiohttp.
+        :param params: Query string parameters.
         :return: Parsed JSON response.
         """
-        return await self._request(method=HttpMethod.GET, url=url, **kwargs)
+        return await self._request(method=HttpMethod.GET, url=url, params=params)
 
-    async def post(self, url: str, **kwargs: Any) -> Any:
+    async def post(self, url: str, json: JsonValue = None, data: str | bytes | None = None) -> JsonValue:
         """
         Alias for POST request.
 
         :param url: Full URL.
-        :param kwargs: Arguments passed directly to aiohttp.
+        :param json: JSON request body.
+        :param data: Raw request body.
         :return: Parsed JSON response.
         """
-        return await self._request(method=HttpMethod.POST, url=url, **kwargs)
+        return await self._request(method=HttpMethod.POST, url=url, json=json, data=data)

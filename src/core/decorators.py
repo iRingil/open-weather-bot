@@ -1,14 +1,14 @@
 """The module implements the decorators used in the application."""
 
+from collections.abc import Awaitable, Callable, Coroutine
 from functools import wraps
-from typing import Any, Callable
 
 from loguru import logger
 
 __all__: tuple[str, ...] = ("handle_exc",)
 
 
-def handle_exc(func: Callable[..., Any]) -> Callable[..., Any]:
+def handle_exc[**P, R](func: Callable[P, Awaitable[R]]) -> Callable[P, Coroutine[None, None, R | None]]:
     """
     A decorator that catches exceptions in an async function.
 
@@ -17,7 +17,7 @@ def handle_exc(func: Callable[..., Any]) -> Callable[..., Any]:
     """
 
     @wraps(wrapped=func)
-    async def wrapper(*args: Any, **kwargs: Any) -> Any:
+    async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R | None:
         """
         Wraps the decorated async function and handles exceptions.
 
@@ -27,8 +27,8 @@ def handle_exc(func: Callable[..., Any]) -> Callable[..., Any]:
         """
         try:
             return await func(*args, **kwargs)
-        except Exception as exc:
-            logger.exception(f"Task '{func.__name__}' caused an exception: {exc}")
+        except Exception as exc:  # noqa: BLE001 - logs any failure of a background task
+            logger.exception(f"Task '{wrapper.__name__}' caused an exception: {exc}")
         return None
 
     return wrapper

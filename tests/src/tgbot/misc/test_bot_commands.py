@@ -6,6 +6,8 @@ render() returns "<template>|<locale>", so every assertion shows which template 
 which locale.
 """
 
+# ruff: noqa: S101, SLF001
+
 from unittest.mock import AsyncMock, MagicMock, create_autospec
 
 import pytest
@@ -16,8 +18,6 @@ from core.tg_templater import TgTemplater
 from tgbot.misc.bot_commands import BotCommands
 
 __all__: tuple = ()
-
-# pylint: disable=protected-access
 
 
 async def _render(tmpl: str, locale: str) -> str:
@@ -93,6 +93,8 @@ class TestSetCommands:
 
     async def test_call_sequence(self, bot: MagicMock, tmpl: MagicMock) -> None:
         """
+        Commands are set for every chat scope and locale.
+
         Clears group and private commands, sets the English defaults (no language_code), then each
         locale - every time for all private chats and for each admin's chat with stats appended.
 

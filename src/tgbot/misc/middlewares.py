@@ -3,7 +3,7 @@
 from collections import defaultdict, deque
 from collections.abc import Awaitable, Callable
 from time import monotonic
-from typing import Any
+from typing import override
 
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject, User
@@ -26,12 +26,13 @@ class AntiFloodMiddleware(BaseMiddleware):
         """Initializes the per-user history of update timestamps."""
         self._hits: dict[int, deque[float]] = defaultdict(deque)
 
+    @override
     async def __call__(
         self,
-        handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
+        handler: Callable[[TelegramObject, dict[str, object]], Awaitable[object]],
         event: TelegramObject,
-        data: dict[str, Any],
-    ) -> Any:
+        data: dict[str, object],
+    ) -> object:
         """
         Drops the update if the sending user has exceeded the rate limit, otherwise calls the handler.
 
@@ -41,8 +42,8 @@ class AntiFloodMiddleware(BaseMiddleware):
         :return: The handler's result, or None if the update was dropped.
         """
         # No user to key the rate limit by, so nothing to throttle.
-        user: User | None = data.get("event_from_user")
-        if user is None:
+        user: object = data.get("event_from_user")
+        if not isinstance(user, User):
             return await handler(event, data)
         now: float = monotonic()
         hits: deque[float] = self._hits[user.id]

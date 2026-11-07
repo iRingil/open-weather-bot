@@ -1,4 +1,4 @@
-"""This module contains handlers of the weather setup dialog."""
+"""Handlers of the weather setup dialog."""
 
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message

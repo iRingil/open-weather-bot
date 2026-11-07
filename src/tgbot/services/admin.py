@@ -1,4 +1,4 @@
-"""This module contains business logic for admin-related functionality."""
+"""Business logic for admin-related functionality."""
 
 from aiogram.types import Message
 
@@ -36,7 +36,7 @@ class AdminService(BaseService):
             "users": await self._db.get_number_of_users(),
         }
         await self._send_temporary(
-            bot=message.bot,  # type: ignore [arg-type]
+            bot=self._bot_of(event=message),
             chat_id=message.chat.id,
             caption=await self._tmpl.render(
                 tmpl=self._msg_stats, locale=self._locale(user=message.from_user), data=data

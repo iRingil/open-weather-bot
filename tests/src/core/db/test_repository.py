@@ -9,8 +9,10 @@ previous (aiogram 2) bot version still running on the same database, so the DDL 
 column by column.
 """
 
+# ruff: noqa: PLR2004, S101, SLF001
+
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, cast
 from unittest.mock import AsyncMock
 
@@ -24,20 +26,18 @@ from core.db.repository import Database
 
 __all__: tuple = ()
 
-# pylint: disable=protected-access
 
-
-def _mock(method: Any) -> AsyncMock:
+def _mock(method: object) -> AsyncMock:
     """
     Types a primitive the db fixture replaced with an AsyncMock as one.
 
     :param method: A mocked Database primitive, e.g. db._execute.
     :return: The same object, typed as AsyncMock.
     """
-    return cast(AsyncMock, method)
+    return cast("AsyncMock", method)
 
 
-def _await_args(method: Any) -> tuple[Any, ...]:
+def _await_args(method: object) -> tuple[Any, ...]:
     """
     Returns the positional arguments of the last await of a mocked Database primitive.
 
@@ -95,10 +95,10 @@ def db_fixture() -> Database:
             use_socket=False,
         )
     )
-    database._execute = AsyncMock(return_value=None)  # type: ignore [method-assign]
-    database._fetch = AsyncMock(return_value=[])  # type: ignore [method-assign]
-    database._fetchrow = AsyncMock(return_value=None)  # type: ignore [method-assign]
-    database._fetchval = AsyncMock(return_value=None)  # type: ignore [method-assign]
+    database._execute = AsyncMock(return_value=None)
+    database._fetch = AsyncMock(return_value=[])
+    database._fetchrow = AsyncMock(return_value=None)
+    database._fetchval = AsyncMock(return_value=None)
     return database
 
 
@@ -107,7 +107,9 @@ class TestCreateTables:
 
     async def test_creates_both_tables_with_the_unchanged_schema(self, db: Database) -> None:
         """
-        users and api_request_counters are created with exactly the previous version's columns,
+        The tables keep the previous version's schema.
+
+        Users and api_request_counters are created with exactly the previous version's columns,
         each with CREATE TABLE IF NOT EXISTS so an existing database is left untouched.
 
         :param db: The Database fixture.
@@ -116,11 +118,15 @@ class TestCreateTables:
         await db.create_tables()
         queries: list[str] = [_normalize(call.kwargs["query"]) for call in _mock(db._execute).await_args_list]
         assert queries == [
-            "CREATE TABLE IF NOT EXISTS users ( id BIGINT PRIMARY KEY, dialog_id BIGINT NOT NULL, "
-            "lang VARCHAR(2), city VARCHAR(72), latitude DOUBLE PRECISION, longitude DOUBLE PRECISION, "
-            "units VARCHAR(8) );",
-            "CREATE TABLE IF NOT EXISTS api_request_counters ( month VARCHAR(7) PRIMARY KEY, "
-            "counter INTEGER NOT NULL DEFAULT 0 );",
+            (
+                "CREATE TABLE IF NOT EXISTS users ( id BIGINT PRIMARY KEY, dialog_id BIGINT NOT NULL, "
+                "lang VARCHAR(2), city VARCHAR(72), latitude DOUBLE PRECISION, longitude DOUBLE PRECISION, "
+                "units VARCHAR(8) );"
+            ),
+            (
+                "CREATE TABLE IF NOT EXISTS api_request_counters ( month VARCHAR(7) PRIMARY KEY, "
+                "counter INTEGER NOT NULL DEFAULT 0 );"
+            ),
         ]
 
 
@@ -197,7 +203,7 @@ class TestSaveUserSettings:
 class TestGetUserSettings:
     """Tests for Database.get_user_settings."""
 
-    @pytest.mark.parametrize("raw_units,expected", [("metric", Units.METRIC), ("imperial", Units.IMPERIAL)])
+    @pytest.mark.parametrize(("raw_units", "expected"), [("metric", Units.METRIC), ("imperial", Units.IMPERIAL)])
     async def test_converts_the_row(self, db: Database, raw_units: str, expected: Units) -> None:
         """
         The row is converted into UserSettings, with units parsed into the Units enum.
@@ -212,7 +218,8 @@ class TestGetUserSettings:
         assert result == UserSettings(
             user_id=42, dialog_id=7, lang="uk", city="Kyiv", latitude=50.45, longitude=30.52, units=expected
         )
-        assert result is not None and result.units is expected
+        assert result is not None
+        assert result.units is expected
 
     async def test_only_selects_users_who_finished_the_setup(self, db: Database) -> None:
         """
@@ -316,6 +323,8 @@ class TestApiCounter:
 
     def test_month_key_has_the_previous_versions_format(self) -> None:
         """
+        The month key keeps the previous version's 'YYYY.MM' format.
+
         The month key is 'YYYY.MM' of the local time - the exact format the previous version wrote,
         so both versions count into the same row.
 
@@ -323,7 +332,7 @@ class TestApiCounter:
         """
         key: str = Database._current_month()
         assert re.fullmatch(r"\d{4}\.\d{2}", key)
-        assert key == datetime.now().strftime("%Y.%m")
+        assert key == datetime.now(UTC).strftime("%Y.%m")
 
     async def test_get_reads_the_current_month(self, db: Database, monkeypatch: pytest.MonkeyPatch) -> None:
         """
@@ -349,7 +358,7 @@ class TestApiCounter:
         """
         assert await db.get_api_counter_value() == 0
 
-    @pytest.mark.parametrize("kwargs,expected", [({}, 1), ({"count": 5}, 5)])
+    @pytest.mark.parametrize(("kwargs", "expected"), [({}, 1), ({"count": 5}, 5)])
     async def test_increase_upserts_by_count(
         self, db: Database, monkeypatch: pytest.MonkeyPatch, kwargs: dict[str, int], expected: int
     ) -> None:
@@ -382,6 +391,6 @@ class TestClose:
         :param db: The Database fixture.
         :return: None
         """
-        db._close = AsyncMock(return_value=None)  # type: ignore [method-assign]
+        db._close = AsyncMock(return_value=None)
         await db.close()
         _mock(db._close).assert_awaited_once_with()

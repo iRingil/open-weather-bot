@@ -1,4 +1,4 @@
-"""This module implements the keyboards used in the bot."""
+"""Keyboards used in the bot."""
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 

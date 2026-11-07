@@ -7,8 +7,10 @@ Log output is asserted via a loguru sink (captured_records), the same pattern
 tests/src/core/test_decorators.py established.
 """
 
-from datetime import datetime
-from typing import Iterator
+# ruff: noqa: S101
+
+from collections.abc import Iterator
+from datetime import UTC, datetime
 
 import pytest
 from aiogram.types import CallbackQuery, Chat, ErrorEvent, Message, Update, User
@@ -26,7 +28,7 @@ def _message(text: str) -> Message:
     :param text: Text the message carries.
     :return: A usable Message instance.
     """
-    return Message(message_id=1, date=datetime.now(), chat=Chat(id=1, type="private"), text=text)
+    return Message(message_id=1, date=datetime.now(UTC), chat=Chat(id=1, type="private"), text=text)
 
 
 def _callback_query(data: str) -> CallbackQuery:

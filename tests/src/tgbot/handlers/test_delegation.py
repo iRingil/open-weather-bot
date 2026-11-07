@@ -6,6 +6,8 @@ The handlers are thin: each test checks the handler forwards its arguments to th
 button's spinner stops even if the service takes a while.
 """
 
+# ruff: noqa: PLR2004, S101, TID252
+
 from unittest.mock import AsyncMock, MagicMock, create_autospec
 
 import pytest

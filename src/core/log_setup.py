@@ -3,15 +3,17 @@
 import logging
 from pathlib import Path
 from sys import stderr
+from typing import override
 
 from loguru import logger
 
-__all__: tuple[str, ...] = ("LoggingManager", "InterceptHandler")
+__all__: tuple[str, ...] = ("InterceptHandler", "LoggingManager")
 
 
 class InterceptHandler(logging.Handler):
     """Intercepts standard logging messages and redirects them to Loguru."""
 
+    @override
     def emit(self, record: logging.LogRecord) -> None:
         """
         Redirects a standard logging message to Loguru.
@@ -36,7 +38,7 @@ class InterceptHandler(logging.Handler):
 class LoggingManager:
     """Performs logging settings in the application."""
 
-    def __init__(self, debug: bool, log_dir: Path, project_name: str) -> None:
+    def __init__(self, *, debug: bool, log_dir: Path, project_name: str) -> None:
         """
         Initializes the logging manager.
 

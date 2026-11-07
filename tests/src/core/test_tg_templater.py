@@ -8,11 +8,13 @@ correctly. Catalogs are compiled in-process via babel.messages (Catalog + write_
 never shells out to msgfmt/pybabel and stays fast and self-contained.
 """
 
+# ruff: noqa: S101, SLF001
+
 import asyncio
-from collections.abc import Callable
 from decimal import Decimal
 from gettext import NullTranslations
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 from babel.messages.catalog import Catalog
@@ -21,6 +23,9 @@ from babel.support import Translations
 from jinja2 import TemplateNotFound
 
 from core.tg_templater import TgTemplater
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 __all__: tuple = ()
 
@@ -40,8 +45,9 @@ def _write_template(templates_dir: Path, name: str, content: str) -> None:
 
 def _compile_translations(locale_dir: Path, locale: str, translations: dict[str, str]) -> None:
     """
-    Compiles a throwaway Babel .mo catalog for one locale, in the dirname/locale/LC_MESSAGES/
-    messages.mo layout babel.support.Translations.load expects.
+    Compiles a throwaway Babel .mo catalog.
+
+    For one locale, in the dirname/locale/LC_MESSAGES/ messages.mo layout babel.support.Translations.load expects.
 
     :param locale_dir: Locale root directory (mirrors src/locales/).
     :param locale: Language code, e.g. "en" or "ru".
@@ -61,7 +67,7 @@ class TestGroupDigits:
     """Tests for the group_digits Jinja2 filter's thousands-separator rules."""
 
     @pytest.mark.parametrize(
-        "value,expected",
+        ("value", "expected"),
         [
             (15, "15"),
             (999, "999"),
@@ -75,6 +81,8 @@ class TestGroupDigits:
     )
     def test_groups_digits_in_threes_with_underscores(self, value: int | Decimal, expected: str) -> None:
         """
+        Digits are grouped in 3s with underscores.
+
         A whole number's digits are grouped in 3s from the right, separated by underscores (not
         spaces, which Telegram would happily wrap a long number across) - including one already
         in scientific notation (e.g. asyncpg's NUMERIC decoding can hand back Decimal('1.000E+7')
@@ -84,13 +92,14 @@ class TestGroupDigits:
         :param expected: Expected underscore-grouped string.
         :return: None
         """
-        assert TgTemplater._group_digits(value=value) == expected  # pylint: disable=protected-access
+        assert TgTemplater._group_digits(value=value) == expected
 
 
 class TestSmartTrunc:
     """
-    Tests for _smart_trunc's HTML-aware truncation, exercised directly since it's the most
-    complex pure logic in this module.
+    Tests for _smart_trunc's HTML-aware truncation.
+
+    Exercised directly since it's the most complex pure logic in this module.
     """
 
     def test_returns_short_html_unchanged(self) -> None:
@@ -99,7 +108,7 @@ class TestSmartTrunc:
 
         :return: None
         """
-        result: str = TgTemplater._smart_trunc(html="<b>hi</b>", max_len=4096)  # pylint: disable=protected-access
+        result: str = TgTemplater._smart_trunc(html="<b>hi</b>", max_len=4096)
         assert result == "<b>hi</b>"
 
     def test_truncates_plain_text_with_no_tags(self) -> None:
@@ -108,54 +117,60 @@ class TestSmartTrunc:
 
         :return: None
         """
-        result: str = TgTemplater._smart_trunc(  # pylint: disable=protected-access
-            html="plain text no tags at all", max_len=10
-        )
+        result: str = TgTemplater._smart_trunc(html="plain text no tags at all", max_len=10)
         assert result == "plain t..."
 
     def test_keeps_balanced_tags_that_fit_exactly_at_the_cut(self) -> None:
         """
-        Regression test: when the cut boundary lands exactly after a complete, balanced tag pair
-        (no dangling open tag), the trimmed content must be kept, not discarded - a prior bug in
-        the final `return suffix if not tag_stack else ...` line dropped the entire trimmed HTML
-        and returned a bare "..." whenever the cut happened to land on a fully-balanced boundary.
+        A cut right after a balanced tag pair keeps the content.
+
+        Regression test: when the cut boundary lands exactly after a complete, balanced tag pair (no dangling open tag),
+        the trimmed content must be kept, not discarded - a prior bug in the final `return suffix if not tag_stack else
+        ...` line dropped the entire trimmed HTML and returned a bare "..." whenever the cut happened to land on a
+        fully-balanced boundary.
 
         :return: None
         """
         html: str = "<b>Hello</b><i>World</i>"
-        result: str = TgTemplater._smart_trunc(html=html, max_len=15)  # pylint: disable=protected-access
+        result: str = TgTemplater._smart_trunc(html=html, max_len=15)
         assert result == "<b>Hello</b>..."
 
     def test_backs_up_before_a_tag_left_open_by_the_cut(self) -> None:
         """
+        A cut inside an unclosed tag backs up before it.
+
         When the cut lands inside an unclosed tag's content, the result backs up to before that
         tag started, rather than emitting a dangling open tag.
 
         :return: None
         """
         html: str = "<b>Hello</b><i>World</i>"
-        result: str = TgTemplater._smart_trunc(html=html, max_len=20)  # pylint: disable=protected-access
+        result: str = TgTemplater._smart_trunc(html=html, max_len=20)
         assert result == "<b>Hello</b>..."
 
     def test_backs_up_to_nothing_when_the_very_first_tag_is_left_open(self) -> None:
         """
+        An unclosed tag is cut off entirely.
+
         An opening tag that's never closed anywhere in the trimmed text backs all the way up to
         before it started, leaving just the suffix.
 
         :return: None
         """
-        result: str = TgTemplater._smart_trunc(html="<b>unterminated", max_len=10)  # pylint: disable=protected-access
+        result: str = TgTemplater._smart_trunc(html="<b>unterminated", max_len=10)
         assert result == "..."
 
     def test_ignores_self_closing_tags(self) -> None:
         """
+        A self-closing tag doesn't move the cut.
+
         A self-closing tag (ending in "/>") never gets pushed onto the open-tag stack, so it
         doesn't force a back-up on its own.
 
         :return: None
         """
         html: str = "<br/>Hello World, this is a long line of text"
-        result: str = TgTemplater._smart_trunc(html=html, max_len=15)  # pylint: disable=protected-access
+        result: str = TgTemplater._smart_trunc(html=html, max_len=15)
         assert result == "<br/>Hello W..."
 
     def test_stops_the_tag_name_at_the_first_attribute_space(self) -> None:
@@ -169,7 +184,7 @@ class TestSmartTrunc:
         :return: None
         """
         html: str = '<a href="x">Link</a> and some trailing padding text here'
-        result: str = TgTemplater._smart_trunc(html=html, max_len=25)  # pylint: disable=protected-access
+        result: str = TgTemplater._smart_trunc(html=html, max_len=25)
         assert result == '<a href="x">Link</a> a...'
 
     def test_backs_up_to_the_tag_start_when_the_cut_lands_inside_an_unclosed_tag(self) -> None:
@@ -183,7 +198,7 @@ class TestSmartTrunc:
         :return: None
         """
         html: str = 'plain text <a href="https://example.com/very/long/path/keeps/going">link</a>'
-        result: str = TgTemplater._smart_trunc(html=html, max_len=23)  # pylint: disable=protected-access
+        result: str = TgTemplater._smart_trunc(html=html, max_len=23)
         assert result == "plain text ..."
 
     def test_backs_up_to_the_earlier_open_tag_when_the_cut_lands_inside_a_nested_unclosed_tag(self) -> None:
@@ -196,7 +211,7 @@ class TestSmartTrunc:
         :return: None
         """
         html: str = '<b>Hello <a href="https://example.com/very/long/path/keeps/going">link</a></b>'
-        result: str = TgTemplater._smart_trunc(html=html, max_len=23)  # pylint: disable=protected-access
+        result: str = TgTemplater._smart_trunc(html=html, max_len=23)
         assert result == "..."
 
 
@@ -320,6 +335,8 @@ class TestRender:
 
     async def test_pluralizes_via_ngettext(self, tmp_path: Path) -> None:
         """
+        Plural forms follow the count.
+
         A {% trans %}...{% pluralize %}...{% endtrans %} block picks the singular/plural form
         based on the bound count, routed through the installed ngettext callable.
 
@@ -336,7 +353,7 @@ class TestRender:
         catalog: Catalog = Catalog(locale="en")
         catalog.add(id=("%(count)s apple", "%(count)s apples"), string=("one %(count)s", "many %(count)s"))
         mo_dir: Path = locale_dir / "en" / "LC_MESSAGES"
-        mo_dir.mkdir(parents=True)
+        mo_dir.mkdir(parents=True)  # noqa: ASYNC240
         with (mo_dir / "messages.mo").open(mode="wb") as fh:
             write_mo(fileobj=fh, catalog=catalog)
         tmpl: TgTemplater = TgTemplater(templates_dir=templates_dir, locale_dir=locale_dir)
@@ -346,6 +363,8 @@ class TestRender:
 
     async def test_group_digits_filter_is_wired_into_the_environment(self, tmp_path: Path) -> None:
         """
+        The group_digits filter works in templates.
+
         The group_digits filter is registered on the Jinja2 environment and usable from a
         template with the |group_digits syntax, not just as a direct Python call.
 
@@ -391,13 +410,15 @@ class TestRender:
         :return: None
         """
         templates_dir: Path = tmp_path / "templates"
-        templates_dir.mkdir()
+        templates_dir.mkdir()  # noqa: ASYNC240
         tmpl: TgTemplater = TgTemplater(templates_dir=templates_dir, locale_dir=tmp_path / "locales")
         with pytest.raises(expected_exception=TemplateNotFound):
             await tmpl.render(tmpl="missing.jinja2", locale="en")
 
     async def test_concurrent_renders_do_not_leak_locale_across_each_other(self, tmp_path: Path) -> None:
         """
+        Concurrent renders keep their own locales.
+
         _locale_ctx is a module-level ContextVar shared by every TgTemplater instance, so this
         confirms concurrent render() calls each keep their own locale instead of one call's
         locale leaking into another's.

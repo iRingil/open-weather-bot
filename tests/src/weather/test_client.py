@@ -5,8 +5,10 @@ HttpClient and Database are autospecced - no network or database. Loguru output 
 through a temporary list sink to check the API key never reaches the log.
 """
 
-import asyncio
-from typing import Any, Iterator
+# ruff: noqa: S101, S105
+
+from collections.abc import Iterator
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, create_autospec
 
 import aiohttp
@@ -199,7 +201,8 @@ class TestGetCurrentWeather:
         data: CurrentWeatherData | None = await api.get_current_weather(
             latitude=1.5, longitude=2.5, lang="ru", units=Units.IMPERIAL
         )
-        assert data is not None and data.description == "clear"
+        assert data is not None
+        assert data.description == "clear"
         assert _get_kwargs(http) == {
             "url": "https://api.openweathermap.org/data/2.5/weather",
             "params": {"lat": 1.5, "lon": 2.5, "lang": "ru", "units": "imperial", "appid": _TOKEN},
@@ -233,7 +236,8 @@ class TestGetForecast:
             "list": [{"dt": 0, "weather": [{"icon": "01d"}], "main": {"temp": 1}, "wind": {"speed": 1}}],
         }
         forecast: ForecastData | None = await api.get_forecast(latitude=1, longitude=2, units=Units.METRIC)
-        assert forecast is not None and len(forecast.points) == 1
+        assert forecast is not None
+        assert len(forecast.points) == 1
         assert _get_kwargs(http) == {
             "url": "https://api.openweathermap.org/data/2.5/forecast",
             "params": {"lat": 1, "lon": 2, "units": "metric", "cnt": 8, "appid": _TOKEN},
@@ -259,7 +263,7 @@ class TestRequestErrors:
         [
             HttpClientError(status=401, url=f"https://x?appid={_TOKEN}", body=b'{"message": "Invalid API key"}'),
             aiohttp.ClientConnectionError("connection reset"),
-            asyncio.TimeoutError(),
+            TimeoutError(),
         ],
     )
     async def test_errors_give_none_are_counted_and_hide_the_key(

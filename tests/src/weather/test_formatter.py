@@ -4,6 +4,8 @@ Unit tests for src/weather/formatter.py (WeatherFormatter).
 Pure functions - dates are formatted by the real Babel locale data.
 """
 
+# ruff: noqa: PLR2004, S101
+
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -18,7 +20,7 @@ __all__: tuple = ()
 _TZ: timezone = timezone(timedelta(hours=3))
 
 
-def _current(**overrides: Any) -> CurrentWeatherData:
+def _current(**overrides: object) -> CurrentWeatherData:
     """
     Builds current weather data.
 
@@ -120,6 +122,8 @@ class TestFormatTime:
     )
     def test_localized_month_and_local_time(self, lang: str, expected: str) -> None:
         """
+        The date follows the language and the location's timezone.
+
         The month name follows the language, the time stays in the location's own timezone, and an
         unknown language falls back to English.
 
@@ -194,4 +198,5 @@ class TestBuildContext:
         ctx: dict[str, Any] = WeatherFormatter.build_context(
             data=_current(precipitation=None, visibility=None), units=Units.METRIC, city="Kyiv", lang="en"
         )
-        assert ctx["precipitation"] is None and ctx["visibility"] is None
+        assert ctx["precipitation"] is None
+        assert ctx["visibility"] is None

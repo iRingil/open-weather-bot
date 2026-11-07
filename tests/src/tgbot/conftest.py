@@ -1,7 +1,9 @@
 """Shared fixtures for the tgbot tests."""
 
+# ruff: noqa: SLF001
+
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 from unittest.mock import AsyncMock, MagicMock, create_autospec
 
 import pytest
@@ -24,16 +26,17 @@ def reset_logo_cache() -> Iterator[None]:
 
     :return: None
     """
-    BaseService._logo_file_id = None  # pylint: disable=protected-access
+    BaseService._logo_file_id = None
     yield
-    BaseService._logo_file_id = None  # pylint: disable=protected-access
+    BaseService._logo_file_id = None
 
 
 @pytest.fixture(name="bot")
 def bot_fixture() -> MagicMock:
     """
-    An autospecced Bot whose API methods are AsyncMocks: send_photo returns a photo Message with
-    ID 100, edits return a photo Message with ID 50.
+    An autospecced Bot whose API methods are AsyncMocks.
+
+    send_photo returns a photo Message with ID 100, edits return a photo Message with ID 50.
 
     :return: The mocked Bot.
     """

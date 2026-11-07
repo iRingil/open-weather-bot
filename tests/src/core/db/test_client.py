@@ -1,10 +1,11 @@
 """
-Unit tests for src/core/db/client.py (PostgresClient) - pure connection-pool plumbing, no SQL of
-its own, unlike core.db.repository.Database. create_pool is monkeypatched at module level;
-Pool/Connection are autospecced - never a real database call.
+Unit tests for src/core/db/client.py (PostgresClient).
+
+Pure connection-pool plumbing, no SQL of its own, unlike core.db.repository.Database. create_pool is monkeypatched at
+module level; Pool/Connection are autospecced - never a real database call.
 """
 
-# pylint: disable=protected-access
+# ruff: noqa: PLR2004, S101, SLF001
 
 from unittest.mock import AsyncMock, MagicMock, create_autospec
 
@@ -19,7 +20,7 @@ from core.db.client import PostgresClient
 __all__: tuple = ()
 
 
-def _pg_config(use_socket: bool = False) -> PostgresConfig:
+def _pg_config(*, use_socket: bool = False) -> PostgresConfig:
     """
     Builds a throwaway PostgresConfig.
 
@@ -49,8 +50,9 @@ def _pg_config(use_socket: bool = False) -> PostgresConfig:
 
 def _connection() -> MagicMock:
     """
-    Builds an autospecced Connection - .execute/.fetch/.fetchrow are AsyncMocks, signature-checked
-    against the real class.
+    Builds an autospecced Connection.
+
+    Its .execute/.fetch/.fetchrow are AsyncMocks, signature-checked against the real class.
 
     :return: The mocked Connection instance.
     """
@@ -87,6 +89,8 @@ class TestBuildDsn:
 
     def test_builds_a_socket_dsn(self) -> None:
         """
+        A socket config builds a socket DSN.
+
         A socket config builds a DSN with an empty host and a host= query param instead, ignoring
         the config's own host/port fields entirely.
 
@@ -97,6 +101,8 @@ class TestBuildDsn:
 
     def test_percent_encodes_special_characters_in_credentials(self) -> None:
         """
+        Credentials with DSN-special characters are percent-encoded.
+
         Username/password containing DSN-special characters (@, :, /, ?, #) are percent-encoded,
         so they can't be misparsed as DSN structure.
 
@@ -120,6 +126,8 @@ class TestGetPool:
 
     async def test_creates_and_caches_the_pool_on_first_call(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """
+        The first call creates and caches the pool.
+
         The first call has no cached pool, so it calls create_pool with the client's own DSN and
         caches the result on self._pool.
 
@@ -137,6 +145,8 @@ class TestGetPool:
 
     async def test_reuses_the_cached_pool_on_a_later_call(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """
+        A cached pool is reused.
+
         A second call with an already-cached pool returns it directly, without calling
         create_pool again.
 
@@ -158,6 +168,8 @@ class TestExecute:
 
     async def test_acquires_a_connection_and_executes_the_query(self) -> None:
         """
+        _execute runs the query over a pooled connection.
+
         _execute acquires a connection from the pool and awaits conn.execute with the query and
         positional args, returning nothing.
 
@@ -175,6 +187,8 @@ class TestFetch:
 
     async def test_acquires_a_connection_and_returns_every_row(self) -> None:
         """
+        _fetch returns the rows fetched over a pooled connection.
+
         _fetch acquires a connection from the pool, awaits conn.fetch with the query and
         positional args, and returns its result as-is.
 
@@ -195,6 +209,8 @@ class TestFetchrow:
 
     async def test_acquires_a_connection_and_returns_the_row(self) -> None:
         """
+        _fetchrow returns the row fetched over a pooled connection.
+
         _fetchrow acquires a connection from the pool, awaits conn.fetchrow with the query and
         positional args, and returns its result.
 
@@ -228,6 +244,8 @@ class TestFetchval:
 
     async def test_acquires_a_connection_and_returns_the_value(self) -> None:
         """
+        _fetchval returns the value fetched over a pooled connection.
+
         _fetchval acquires a connection from the pool, awaits conn.fetchval with the query and
         positional args, and returns its result.
 

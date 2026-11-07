@@ -62,8 +62,9 @@ class BotCommands:
 
     async def _set_for_locale(self, locale: str, language_code: str | None) -> None:
         """
-        Sets the commands of one locale: the user commands for every private chat, plus the admin
-        commands in each admin's own chat.
+        Sets the commands of one locale.
+
+        The user commands for every private chat, plus the admin commands in each admin's own chat.
 
         :param locale: Locale to render the command descriptions in.
         :param language_code: Telegram language code the commands apply to, or None for the

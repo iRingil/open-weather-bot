@@ -1,12 +1,13 @@
-"""Low-level async PostgreSQL client with connection pooling.
+"""
+Low-level async PostgreSQL client with connection pooling.
 
 Implements only generic execute/fetch primitives over a connection pool.
 """
 
-from typing import Any
+from typing import cast
 from urllib.parse import quote
 
-from asyncpg import Connection, Pool, Record, create_pool  # pylint: disable=unused-import
+from asyncpg import Pool, Record, create_pool
 
 from core.config import PostgresConfig
 
@@ -17,17 +18,16 @@ class PostgresClient:
     """Low-level async PostgreSQL client with connection pooling."""
 
     def __init__(self, pg_config: PostgresConfig) -> None:
-        """
-        :param pg_config: PostgreSQL connection configuration.
-        """
+        """:param pg_config: PostgreSQL connection configuration."""
         self._db_dsn: str = self._build_dsn(pg_config=pg_config)
         self._pool: Pool | None = None
 
     @staticmethod
     def _build_dsn(pg_config: PostgresConfig) -> str:
         """
-        Builds a PostgreSQL DSN string from the configuration. Username/password are percent
-        encoded so credentials containing DSN-special characters (@, :, /, ?, #) don't get
+        Builds a PostgreSQL DSN string from the configuration.
+
+        Username/password are percent encoded so credentials containing DSN-special characters (@, :, /, ?, #) don't get
         misparsed.
 
         :param pg_config: PostgreSQL connection configuration.
@@ -47,13 +47,11 @@ class PostgresClient:
         """
         pool: Pool | None = self._pool
         if pool is None:
-            # noinspection PyUnresolvedReferences
             pool = await create_pool(dsn=self._db_dsn)
-            assert pool is not None
             self._pool = pool
         return pool
 
-    async def _execute(self, query: str, *args: Any) -> None:
+    async def _execute(self, query: str, *args: object) -> None:
         """
         Executes a command in the database.
 
@@ -62,10 +60,10 @@ class PostgresClient:
         :return: None
         """
         pool: Pool = await self._get_pool()
-        async with pool.acquire() as conn:  # type: Connection
+        async with pool.acquire() as conn:
             await conn.execute(query, *args)
 
-    async def _fetch(self, query: str, *args: Any) -> list[Record]:
+    async def _fetch(self, query: str, *args: object) -> list[Record]:
         """
         Fetches multiple records from the database.
 
@@ -74,11 +72,10 @@ class PostgresClient:
         :return: A list of database records.
         """
         pool: Pool = await self._get_pool()
-        async with pool.acquire() as conn:  # type: Connection
-            result: list[Record] = await conn.fetch(query, *args)
-            return result
+        async with pool.acquire() as conn:
+            return await conn.fetch(query, *args)
 
-    async def _fetchrow(self, query: str, *args: Any) -> Record | None:
+    async def _fetchrow(self, query: str, *args: object) -> Record | None:
         """
         Fetches a single record from the database.
 
@@ -87,10 +84,10 @@ class PostgresClient:
         :return: A single database record or None if no record found.
         """
         pool: Pool = await self._get_pool()
-        async with pool.acquire() as conn:  # type: Connection
+        async with pool.acquire() as conn:
             return await conn.fetchrow(query, *args)
 
-    async def _fetchval(self, query: str, *args: Any) -> Any:
+    async def _fetchval(self, query: str, *args: object) -> object:
         """
         Fetches a single value from the database.
 
@@ -99,8 +96,9 @@ class PostgresClient:
         :return: The value of the first column of the first row, or None if no row found.
         """
         pool: Pool = await self._get_pool()
-        async with pool.acquire() as conn:  # type: Connection
-            return await conn.fetchval(query, *args)
+        async with pool.acquire() as conn:
+            value: object = cast("object", await conn.fetchval(query, *args))
+            return value
 
     async def _close(self) -> None:
         """

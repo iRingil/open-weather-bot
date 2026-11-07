@@ -7,9 +7,9 @@ suite down. The Bot's send_photo returns a photo Message (ID 100) whose largest 
 "sent" - the ID the service should reuse for the rest of a location.
 """
 
-# pylint: disable=protected-access
+# ruff: noqa: PLR2004, S101, SLF001, TID252
 
-from typing import Iterator
+from collections.abc import Iterator
 from unittest.mock import AsyncMock, MagicMock, create_autospec, patch
 
 import pytest
@@ -60,8 +60,9 @@ def fake_sleep_fixture() -> Iterator[AsyncMock]:
 @pytest.fixture(name="reporter")
 def reporter_fixture() -> MagicMock:
     """
-    An autospecced WeatherReporter: every location has an image and current weather, every
-    caption names its city and language.
+    An autospecced WeatherReporter.
+
+    Every location has an image and current weather, every caption names its city and language.
 
     :return: The mocked WeatherReporter.
     """
@@ -85,10 +86,9 @@ def reporter_fixture() -> MagicMock:
     return mock
 
 
-# pylint: disable=too-many-arguments
 @pytest.fixture(name="service")
-def service_fixture(
-    config: MagicMock, tmpl: MagicMock, kb: MagicMock, db: MagicMock, bot: MagicMock, reporter: MagicMock
+def service_fixture(  # noqa: PLR0913 - one fixture per dependency
+    *, config: MagicMock, tmpl: MagicMock, kb: MagicMock, db: MagicMock, bot: MagicMock, reporter: MagicMock
 ) -> ForecastService:
     """
     A ForecastService over the mocked dependencies.
@@ -111,6 +111,8 @@ class TestUpdateAll:
         self, service: ForecastService, db: MagicMock, reporter: MagicMock, bot: MagicMock
     ) -> None:
         """
+        Requests are grouped by location, units and language.
+
         One forecast per (location, units), one current weather per language of each, one
         caption and one delivery per user.
 
@@ -191,6 +193,8 @@ class TestUpdateAll:
         self, service: ForecastService, db: MagicMock, reporter: MagicMock, bot: MagicMock
     ) -> None:
         """
+        Without the current weather the language's users are skipped.
+
         Without the current weather in one language its users are left alone, the other
         languages of the location are still updated.
 
@@ -239,11 +243,12 @@ class TestUpdateAll:
 class TestDeliver:
     """Tests ForecastService._deliver."""
 
-    # pylint: disable=too-many-arguments
     async def test_success_sends_new_and_deletes_previous(
         self, service: ForecastService, bot: MagicMock, db: MagicMock, fake_sleep: AsyncMock
     ) -> None:
         """
+        A report replaces the previous dialog message.
+
         A report is sent as a new silent message that becomes the dialog message, the previous one
         is deleted, and the broadcast pauses for its interval.
 
@@ -254,7 +259,8 @@ class TestDeliver:
         :return: None
         """
         msg = await service._deliver(user=_user(1), photo="file", caption="cap")
-        assert msg is not None and msg.message_id == 100
+        assert msg is not None
+        assert msg.message_id == 100
         bot.send_photo.assert_awaited_once()
         assert bot.send_photo.await_args.kwargs["disable_notification"] is True
         bot.edit_message_media.assert_not_awaited()
@@ -264,8 +270,9 @@ class TestDeliver:
 
     async def test_failed_delete_of_previous_does_not_resend(self, service: ForecastService, bot: MagicMock) -> None:
         """
-        A Telegram error while deleting the previous message is only logged: the new report is
-        already delivered, so it is neither retried nor sent twice.
+        A Telegram error while deleting the previous message is only logged.
+
+        The new report is already delivered, so it is neither retried nor sent twice.
 
         :param service: The ForecastService under test.
         :param bot: The mocked Bot.
@@ -273,7 +280,8 @@ class TestDeliver:
         """
         bot.delete_message.side_effect = TelegramNetworkError(method=telegram_method(), message="Request timeout")
         msg = await service._deliver(user=_user(1), photo="file", caption="cap")
-        assert msg is not None and msg.message_id == 100
+        assert msg is not None
+        assert msg.message_id == 100
         bot.send_photo.assert_awaited_once()
 
     async def test_forbidden_deletes_user(self, service: ForecastService, bot: MagicMock, db: MagicMock) -> None:

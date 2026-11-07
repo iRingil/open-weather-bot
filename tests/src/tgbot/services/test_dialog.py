@@ -6,7 +6,7 @@ city list are checked as they would be stored. Bot, Database, TgTemplater, Keybo
 WeatherAPI and WeatherReporter are autospecced mocks (see ../conftest.py).
 """
 
-# pylint: disable=protected-access
+# ruff: noqa: PLR2004, S101, TID252
 
 from unittest.mock import AsyncMock, MagicMock, create_autospec, patch
 
@@ -69,10 +69,9 @@ def reporter_fixture() -> MagicMock:
     return mock
 
 
-# pylint: disable=too-many-arguments
 @pytest.fixture(name="service")
-def service_fixture(
-    config: MagicMock, tmpl: MagicMock, kb: MagicMock, db: MagicMock, api: MagicMock, reporter: MagicMock
+def service_fixture(  # noqa: PLR0913 - one fixture per dependency
+    *, config: MagicMock, tmpl: MagicMock, kb: MagicMock, db: MagicMock, api: MagicMock, reporter: MagicMock
 ) -> DialogService:
     """
     A DialogService over the mocked dependencies.
@@ -95,6 +94,8 @@ class TestStart:
         self, service: DialogService, bot: MagicMock, db: MagicMock, state: FSMContext
     ) -> None:
         """
+        /start resets the user and asks for a city.
+
         /start clears the state, deletes the command and the user's row, replaces the dialog
         message with the greeting + geolocation keyboard and waits for a city.
 
@@ -120,6 +121,8 @@ class TestStart:
         self, service: DialogService, bot: MagicMock, db: MagicMock, state: FSMContext
     ) -> None:
         """
+        A missing old dialog message is skipped silently.
+
         An old dialog message the user already deleted is skipped without logging, and the
         dialog still starts.
 
@@ -323,6 +326,25 @@ class TestSelectCity:
         assert bot.send_photo.await_args.kwargs["caption"].startswith("msg_enter_city")
         assert await state.get_state() == WeatherSetupStates.wait_for_city.state
 
+    @pytest.mark.parametrize("data", [{}, {"cities": [{"name": "Kyiv"}]}])
+    async def test_missing_or_malformed_list_restarts_city_input(
+        self, service: DialogService, bot: MagicMock, state: FSMContext, data: dict[str, object]
+    ) -> None:
+        """
+        A city list that is gone or malformed in the FSM storage restarts the city input.
+
+        :param service: The DialogService under test.
+        :param bot: The mocked Bot.
+        :param state: The FSM context.
+        :param data: The stored FSM data.
+        :return: None
+        """
+        await state.set_data(data)
+        call = make_call(bot=bot, message=make_message(message_id=33, photo_id="p"))
+        await service.select_city(call=call, callback_data=CityCallback(index=0), state=state)
+        assert bot.send_photo.await_args.kwargs["caption"].startswith("msg_enter_city")
+        assert await state.get_state() == WeatherSetupStates.wait_for_city.state
+
 
 class TestSelectUnits:
     """Tests DialogService.select_units."""
@@ -336,6 +358,8 @@ class TestSelectUnits:
         state: FSMContext,
     ) -> None:
         """
+        Selecting the units completes the setup.
+
         The settings are saved, the report image replaces the dialog photo, the state is cleared
         and the "setup complete" notice is deleted after its TTL.
 
@@ -381,6 +405,8 @@ class TestSelectUnits:
         state: FSMContext,
     ) -> None:
         """
+        A report without an image shows the logo.
+
         Without a forecast image the logo is shown; a city name longer than the column is cut to
         72 characters; an inaccessible callback message falls back to the stored dialog ID.
 

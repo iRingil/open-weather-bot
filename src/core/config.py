@@ -77,9 +77,9 @@ class CoreConfig:
         :raise EnvError: if the admin IDs are not found in the .env file.
         """
         try:
-            return list(map(int, self._env.list(name="ADMIN_IDS")))
+            return self._env.list(name="ADMIN_IDS", subcast=int)
         except EnvError as exc:
-            raise EnvError(f"Admin IDs not found in the .env file: {repr(exc)}") from exc
+            raise EnvError(f"Admin IDs not found in the .env file: {exc!r}") from exc
 
     def _get_weather_token(self) -> SecretStr:
         """
@@ -91,7 +91,7 @@ class CoreConfig:
         try:
             return SecretStr(self._env.str(name="WEATHER_API_TOKEN"))
         except EnvError as exc:
-            raise EnvError(f"WEATHER_API_TOKEN not found in the .env file: {repr(exc)}") from exc
+            raise EnvError(f"WEATHER_API_TOKEN not found in the .env file: {exc!r}") from exc
 
     def _get_postgres(self) -> PostgresConfig:
         """
@@ -111,7 +111,7 @@ class CoreConfig:
                 use_socket=self._env.bool(name="USE_POSTGRES_SOCKET", default=False),
             )
         except EnvError as exc:
-            raise EnvError(f"Postgres credentials not found in the .env file: {repr(exc)}") from exc
+            raise EnvError(f"Postgres credentials not found in the .env file: {exc!r}") from exc
 
     def _get_redis(self) -> Redis:
         """
@@ -144,7 +144,7 @@ class CoreConfig:
                 decode_responses=True,
             )
         except EnvError as exc:
-            raise EnvError(f"Redis credentials not found in the .env file: {repr(exc)}") from exc
+            raise EnvError(f"Redis credentials not found in the .env file: {exc!r}") from exc
 
     @property
     def debug(self) -> bool:

@@ -1,4 +1,4 @@
-"""This module contains base service classes for shared functionality."""
+"""Base service classes for shared functionality."""
 
 from asyncio import sleep
 
@@ -110,6 +110,22 @@ class BaseService:
         except TelegramBadRequest as e:  # Older than 48 hours, or already gone
             logger.debug(f"Message {msg_id} in chat {chat_id} was not deleted: {e.message}")
 
+    @staticmethod
+    def _bot_of(event: Message | CallbackQuery) -> Bot:
+        """
+        Returns the bot an incoming message or callback query is bound to.
+
+        aiogram binds every update it dispatches to its bot, so a missing one is a programming error.
+
+        :param event: The incoming message or callback query.
+        :return: The bot.
+        :raise RuntimeError: if the event is not bound to a bot.
+        """
+        bot: Bot | None = event.bot
+        if bot is None:
+            raise RuntimeError("The event is not bound to a bot")
+        return bot
+
     async def _delete_user_msg(self, message: Message) -> None:
         """
         Deletes a message sent by the user, if Telegram still allows it.
@@ -173,9 +189,9 @@ class BaseService:
             await self._delete_msg(bot=bot, chat_id=chat_id, msg_id=old_msg_id)
         return msg
 
-    # pylint: disable=too-many-arguments
-    async def _edit_or_send_msg(
+    async def _edit_or_send_msg(  # noqa: PLR0913 - the parts of one Telegram message
         self,
+        *,
         bot: Bot,
         chat_id: int,
         msg_id: int | None,
@@ -210,17 +226,18 @@ class BaseService:
                         media=InputMediaPhoto(media=photo, caption=caption),
                         reply_markup=reply_markup,
                     )
-                if not isinstance(result, Message):
-                    return None
-                if photo is not None:
-                    self._remember_logo(sent=photo, message=result)
-                return result
             # 2. If the message doesn't exist or has the same content:
             except TelegramBadRequest as e:
                 # 2.1 If the message as same as a current content, do nothing
                 if _NOT_MODIFIED in e.message:
                     return None
                 logger.debug(f"Message {msg_id} in chat {chat_id} was not edited: {e.message}")
+            else:
+                if not isinstance(result, Message):
+                    return None
+                if photo is not None:
+                    self._remember_logo(sent=photo, message=result)
+                return result
         # 2.2 If the message can't be edited, send a new one and drop the old one if Telegram allows
         msg: Message = await self._send_photo(
             bot=bot, chat_id=chat_id, caption=caption, photo=photo, reply_markup=reply_markup
@@ -253,7 +270,7 @@ class BaseService:
             else await self._db.get_dialog_id(user_id=call.from_user.id)
         )
         return await self._edit_or_send_msg(
-            bot=call.bot,  # type: ignore [arg-type]
+            bot=self._bot_of(event=call),
             chat_id=call.from_user.id,
             msg_id=msg_id,
             caption=caption,

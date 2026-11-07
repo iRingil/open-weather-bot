@@ -1,5 +1,7 @@
 """The module contains various filters that can be used in handlers."""
 
+from typing import override
+
 from aiogram.filters import BaseFilter
 from aiogram.types import CallbackQuery, Message
 
@@ -18,6 +20,7 @@ class UserIsAdmin(BaseFilter):
         super().__init__()
         self.admins_ids: list[int] = admins_ids
 
+    @override
     async def __call__(self, obj: CallbackQuery | Message) -> bool:
         """
         Returns True if the sender of the message or callback query is a bot administrator.

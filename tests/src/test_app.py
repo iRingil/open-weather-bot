@@ -8,16 +8,16 @@ pre-armed as an AsyncMock. TestMain patches CoreConfig/LoggingManager/Applicatio
 test main()'s own orchestration rather than Application's internals.
 """
 
-# pylint: disable=protected-access
+# ruff: noqa: ARG001, S101, S105, S106, SLF001
 
+from collections.abc import Iterator
 from types import SimpleNamespace
-from typing import Iterator
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.fsm.storage.redis import DefaultKeyBuilder
+from aiogram.fsm.storage.base import DefaultKeyBuilder
 from loguru import logger
 
 import app as app_module
@@ -71,6 +71,8 @@ def captured_records_fixture() -> Iterator[list]:
 @pytest.fixture(name="classes")
 def classes_fixture(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
     """
+    Patches everything app.py constructs.
+
     Patches every class/function/module app.py constructs or calls at module level with a
     MagicMock, returning them in a namespace keyed by their app.py attribute name.
 
@@ -86,6 +88,8 @@ def classes_fixture(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
 @pytest.fixture(name="config")
 def config_fixture(classes: SimpleNamespace) -> MagicMock:
     """
+    The mocked Config the Application receives.
+
     The mocked Config instance Application.__init__ receives, with sane defaults (no webhook) so
     tests only need to override what they actually care about. config.redis is left as the
     fixture's own auto-generated MagicMock child - a stand-in for the shared Redis connection,
@@ -113,8 +117,14 @@ def core_fixture() -> MagicMock:
 
 
 @pytest.fixture(name="application")
-def application_fixture(classes: SimpleNamespace, config: MagicMock, core: MagicMock) -> Application:
+def application_fixture(
+    classes: SimpleNamespace,
+    config: MagicMock,  # pyright: ignore[reportUnusedParameter] - patches Config for the constructor
+    core: MagicMock,
+) -> Application:
     """
+    A real Application over mocked collaborators.
+
     A real Application built on the classes/config/core fixtures, with every awaited collaborator
     method pre-armed as an AsyncMock and no bot session to close by default.
 
@@ -153,7 +163,8 @@ class TestInit:
         assert application._core is core
         classes.CoreConfig.assert_not_called()
 
-    def test_builds_its_own_core_config_when_none_given(self, classes: SimpleNamespace, config: MagicMock) -> None:
+    @pytest.mark.usefixtures("config")
+    def test_builds_its_own_core_config_when_none_given(self, classes: SimpleNamespace) -> None:
         """
         core=None (the default) builds a fresh CoreConfig instead.
 
@@ -165,7 +176,8 @@ class TestInit:
         classes.CoreConfig.assert_called_once_with()
         assert application._core is classes.CoreConfig.return_value
 
-    def test_builds_config_from_core(self, application: Application, classes: SimpleNamespace, core: MagicMock) -> None:
+    @pytest.mark.usefixtures("application")
+    def test_builds_config_from_core(self, classes: SimpleNamespace, core: MagicMock) -> None:
         """
         Config is built from the resolved CoreConfig.
 
@@ -176,7 +188,8 @@ class TestInit:
         """
         classes.Config.assert_called_once_with(core=core)
 
-    def test_constructs_the_bot_with_html_parse_mode(self, application: Application, classes: SimpleNamespace) -> None:
+    @pytest.mark.usefixtures("application")
+    def test_constructs_the_bot_with_html_parse_mode(self, classes: SimpleNamespace) -> None:
         """
         The bot is built with the config's token and HTML parse mode, replying/link-previews relaxed.
 
@@ -192,10 +205,11 @@ class TestInit:
         assert default.allow_sending_without_reply is True
         assert default.link_preview_is_disabled is True
 
-    def test_builds_redis_storage_from_the_shared_connection(
-        self, application: Application, classes: SimpleNamespace, config: MagicMock
-    ) -> None:
+    @pytest.mark.usefixtures("application")
+    def test_builds_redis_storage_from_the_shared_connection(self, classes: SimpleNamespace, config: MagicMock) -> None:
         """
+        FSM storage uses the shared Redis connection.
+
         FSM storage is always Redis-backed now, built from config's shared connection and
         prefixed for this bot - there's no in-memory fallback, since Redis is mandatory
         infrastructure.
@@ -211,7 +225,8 @@ class TestInit:
         assert redis_kwargs["key_builder"].prefix == "owb_fsm"
         assert classes.Dispatcher.call_args.kwargs["storage"] is classes.RedisStorage.return_value
 
-    def test_registers_the_antiflood_middleware(self, application: Application, classes: SimpleNamespace) -> None:
+    @pytest.mark.usefixtures("application")
+    def test_registers_the_antiflood_middleware(self, classes: SimpleNamespace) -> None:
         """
         The anti-flood middleware is built and registered as an outer middleware on every update.
 
@@ -224,10 +239,13 @@ class TestInit:
             classes.AntiFloodMiddleware.return_value
         )
 
+    @pytest.mark.usefixtures("application")
     def test_wires_every_remaining_collaborator(
-        self, application: Application, classes: SimpleNamespace, config: MagicMock, core: MagicMock
+        self, classes: SimpleNamespace, config: MagicMock, core: MagicMock
     ) -> None:
         """
+        Every service is built with its dependencies.
+
         TgTemplater/KeyboardManager/Database/HttpClient/WeatherAPI/WeatherReporter/ForecastService/
         Scheduler are all built from the right upstream collaborators.
 
@@ -295,7 +313,11 @@ class TestOnStartup:
         :return: None
         """
         config.webhook = WebhookCredentials(
-            wh_host="https://example.com", wh_path="hook", wh_token="secret", app_host="0.0.0.0", app_port=8080
+            wh_host="https://example.com",
+            wh_path="hook",
+            wh_token="secret",
+            app_host="0.0.0.0",  # noqa: S104
+            app_port=8080,
         )
         await application._on_startup()
         classes.Bot.return_value.set_webhook.assert_awaited_once_with(
@@ -335,7 +357,7 @@ class TestOnShutdown:
         :param config: The mocked Config fixture.
         :return: None
         """
-        config.webhook = WebhookCredentials(wh_host="h", wh_path="p", wh_token="t", app_host="0.0.0.0", app_port=1)
+        config.webhook = WebhookCredentials(wh_host="h", wh_path="p", wh_token="t", app_host="0.0.0.0", app_port=1)  # noqa: S104
         await application._on_shutdown()
         classes.Bot.return_value.delete_webhook.assert_awaited_once()
 
@@ -356,8 +378,9 @@ class TestOnShutdown:
 
     async def test_leaves_the_bot_session_to_aiogram(self, application: Application) -> None:
         """
-        The bot session is not closed here: aiogram closes it after the shutdown hook, and closing
-        it earlier would cut the pending long-polling request.
+        The bot session is not closed here.
+
+        Aiogram closes it after the shutdown hook, and closing it earlier would cut the pending long-polling request.
 
         :param application: The Application fixture.
         :return: None
@@ -386,6 +409,8 @@ class TestOnShutdown:
         self, application: Application, classes: SimpleNamespace
     ) -> None:
         """
+        The scheduler stops before the shared connections close.
+
         The scheduler is stopped (waiting for any in-flight job) before FSM storage, the HTTP
         client, and the database are closed. A still-running job depends on all three, so closing
         them first would pull them out from under it while Scheduler.shutdown(wait=True) is still
@@ -447,7 +472,11 @@ class TestRun:
         :return: None
         """
         config.webhook = WebhookCredentials(
-            wh_host="h", wh_path="hook", wh_token="t", app_host="0.0.0.0", app_port=8080
+            wh_host="h",
+            wh_path="hook",
+            wh_token="t",
+            app_host="0.0.0.0",  # noqa: S104
+            app_port=8080,
         )
         application.run()
         classes.AiohttpApp.assert_called_once_with()
@@ -458,7 +487,7 @@ class TestRun:
             classes.AiohttpApp.return_value, path="/hook"
         )
         classes.setup_application.assert_called_once_with(classes.AiohttpApp.return_value, application._dp)
-        classes.run_app.assert_called_once_with(app=classes.AiohttpApp.return_value, host="0.0.0.0", port=8080)
+        classes.run_app.assert_called_once_with(app=classes.AiohttpApp.return_value, host="0.0.0.0", port=8080)  # noqa: S104
         classes.asyncio.run.assert_not_called()
 
     def test_polling_mode_runs_via_asyncio_run(
@@ -484,6 +513,8 @@ class TestRun:
 @pytest.fixture(name="main_classes")
 def main_classes_fixture(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
     """
+    Patches main()'s collaborators.
+
     Patches CoreConfig/LoggingManager/Application for main()'s own tests - main()'s orchestration
     is what's under test here, not Application's internals (see TestInit/TestOnStartup/etc. above).
 
@@ -548,9 +579,8 @@ class TestMain:
         app_module.main()
         assert any(record["level"].name == "CRITICAL" for record in captured_records)
 
-    def test_always_logs_that_the_application_stopped(
-        self, main_classes: SimpleNamespace, captured_records: list
-    ) -> None:
+    @pytest.mark.usefixtures("main_classes")
+    def test_always_logs_that_the_application_stopped(self, captured_records: list) -> None:
         """
         The "stopped" message is logged even on a clean run, via the finally block.
 

@@ -54,8 +54,9 @@ _WIND_COLORS: tuple[tuple[int, str, str], ...] = (
 
 class ForecastImage:
     """
-    Draws the weather forecast image: one column per forecast step with time, icon, temperature
-    and a wind speed bar.
+    Draws the weather forecast image.
+
+    One column per forecast step with time, icon, temperature and a wind speed bar.
 
     Fonts and icons are loaded once, at construction. draw() is meant to run in a worker thread
     (asyncio.to_thread); a lock keeps concurrent calls from sharing Pillow's font objects at once.

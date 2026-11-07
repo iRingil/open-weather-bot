@@ -1,7 +1,7 @@
 """Thin APScheduler wrapper running the scheduled weather update."""
 
-from datetime import timezone
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from datetime import UTC
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -23,7 +23,7 @@ class Scheduler:
 
         :param update_weather: Coroutine function sending fresh weather to every user.
         """
-        self._instance: AsyncIOScheduler = AsyncIOScheduler(timezone=timezone.utc)
+        self._instance: AsyncIOScheduler = AsyncIOScheduler(timezone=UTC)
         self._update_weather: Callable[[], Awaitable[None]] = update_weather
 
     def start(self) -> None:
@@ -32,7 +32,7 @@ class Scheduler:
 
         :return: None
         """
-        self._instance.add_job(
+        self._instance.add_job(  # pyright: ignore[reportUnknownMemberType] - APScheduler is untyped
             func=self._update_weather,
             trigger="cron",
             hour=self._UPDATE_HOURS,
@@ -43,7 +43,7 @@ class Scheduler:
         )
         self._instance.start()
 
-    def shutdown(self, wait: bool = True) -> None:
+    def shutdown(self, *, wait: bool = True) -> None:
         """
         Stops the scheduler.
 

@@ -1,8 +1,7 @@
 """Client for the OpenWeatherMap geocoding, current weather and forecast APIs."""
 
-from asyncio import Lock, TimeoutError as AsyncTimeoutError, sleep
+from asyncio import Lock, sleep
 from time import monotonic
-from typing import Any
 
 from aiohttp import ClientError
 from loguru import logger
@@ -10,7 +9,7 @@ from pydantic import SecretStr
 
 from core.db.data_types import Units
 from core.db.repository import Database
-from core.http_client import HttpClient, HttpClientError
+from core.http_client import HttpClient, HttpClientError, JsonValue
 from weather.data_types import CityData, CurrentWeatherData, ForecastData
 from weather.parser import WeatherParser
 
@@ -86,7 +85,7 @@ class WeatherAPI:
             await sleep(delay)
         self._last_request = monotonic()
 
-    async def _request(self, url: str, params: dict[str, Any]) -> Any:
+    async def _request(self, url: str, params: dict[str, str | int | float]) -> JsonValue:
         """
         Makes one rate-limited, counted request to the OpenWeatherMap API.
 
@@ -101,13 +100,13 @@ class WeatherAPI:
         except HttpClientError as exc:
             # The URL is left out: its query string carries the API key.
             logger.error(f"OpenWeatherMap API returned HTTP {exc.status}: {exc.body[:200]!r}")
-        except (ClientError, AsyncTimeoutError) as exc:
-            logger.error(f"OpenWeatherMap API request failed: {repr(exc)}")
+        except (TimeoutError, ClientError) as exc:
+            logger.error(f"OpenWeatherMap API request failed: {exc!r}")
         finally:
             await self._db.increase_api_counter()
         return None
 
-    def _parse_cities(self, raw_data: Any, lang: str) -> list[CityData]:
+    def _parse_cities(self, raw_data: JsonValue, lang: str) -> list[CityData]:
         """
         Parses a geocoding API response.
 
@@ -135,7 +134,7 @@ class WeatherAPI:
         query: str = self.normalize_city_name(raw_city_name=city_name)
         if not query:
             return []
-        raw_data: Any = await self._request(
+        raw_data: JsonValue = await self._request(
             url=f"{self._GEOCODING_API_URL}/direct", params={"q": query, "limit": self._CITIES_LIMIT}
         )
         return self._parse_cities(raw_data=raw_data, lang=lang)
@@ -149,7 +148,7 @@ class WeatherAPI:
         :param lang: ISO 639-1 user language code.
         :return: Found cities (possibly none).
         """
-        raw_data: Any = await self._request(
+        raw_data: JsonValue = await self._request(
             url=f"{self._GEOCODING_API_URL}/reverse",
             params={"lat": latitude, "lon": longitude, "limit": self._CITIES_LIMIT},
         )
@@ -167,7 +166,7 @@ class WeatherAPI:
         :param units: Measurement units.
         :return: Current weather, or None if it couldn't be obtained.
         """
-        raw_data: Any = await self._request(
+        raw_data: JsonValue = await self._request(
             url=self._CURRENT_WEATHER_API_URL,
             params={"lat": latitude, "lon": longitude, "lang": lang, "units": units.value},
         )
@@ -185,7 +184,7 @@ class WeatherAPI:
         :param units: Measurement units.
         :return: Weather forecast, or None if it couldn't be obtained.
         """
-        raw_data: Any = await self._request(
+        raw_data: JsonValue = await self._request(
             url=self._FORECAST_API_URL,
             params={"lat": latitude, "lon": longitude, "units": units.value, "cnt": self._FORECAST_STEPS},
         )

@@ -1,4 +1,4 @@
-"""This module contains event handlers registration for the bot."""
+"""Registration of the bot's event handlers."""
 
 from aiogram import Dispatcher, F, Router
 from aiogram.enums import ContentType
@@ -27,9 +27,9 @@ __all__: tuple[str] = ("MainHandler",)
 class MainHandler:
     """Registers event handlers for the bot."""
 
-    # pylint: disable=too-many-arguments
-    def __init__(
+    def __init__(  # noqa: PLR0913 - wires every service the handlers need
         self,
+        *,
         config: Config,
         dp: Dispatcher,
         tmpl: TgTemplater,

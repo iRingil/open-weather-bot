@@ -1,4 +1,5 @@
-"""Unit tests for src/core/config.py (CoreConfig, PostgresConfig).
+"""
+Unit tests for src/core/config.py (CoreConfig, PostgresConfig).
 
 Every test builds its own throwaway .env file under pytest's tmp_path fixture and passes it as
 CoreConfig's base_dir - never touches the real project .env (which holds live secrets, is
@@ -9,15 +10,20 @@ is never actually connected to either - Config only builds a lazy redis.asyncio.
 object, it never connects.
 """
 
+# ruff: noqa: PLR2004, S101, S105
+
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 from environs import Env, EnvError
 from pydantic import SecretStr
 from redis.asyncio import Redis
-from redis.asyncio.connection import ConnectionPool
 
 from core.config import CoreConfig, PostgresConfig
+
+if TYPE_CHECKING:
+    from redis.asyncio.connection import ConnectionPool
 
 __all__: tuple = ()
 
@@ -111,8 +117,8 @@ class TestDebug:
         _write_env(base_dir=tmp_path, content=_REQUIRED_VARS)
         assert CoreConfig(base_dir=tmp_path).debug is True
 
-    @pytest.mark.parametrize("raw_value,expected", [("true", True), ("false", False)])
-    def test_reads_explicit_value(self, tmp_path: Path, raw_value: str, expected: bool) -> None:
+    @pytest.mark.parametrize(("raw_value", "expected"), [("true", True), ("false", False)])
+    def test_reads_explicit_value(self, tmp_path: Path, raw_value: str, expected: bool) -> None:  # noqa: FBT001
         """
         DEBUG=true/false in .env is parsed to the matching bool.
 
@@ -446,6 +452,8 @@ class TestRedis:
     )
     def test_username_and_password_are_optional(self, tmp_path: Path, extra_env: str) -> None:
         """
+        Missing or empty Redis credentials become None.
+
         REDIS_DB_USER/REDIS_DB_PASS absent or empty become None - Redis then authenticates against
         its 'default' user, as the previous bot version's setup (no username at all) expects.
 
@@ -463,6 +471,8 @@ class TestRedis:
 
     def test_computed_once_in_init_not_per_access(self, tmp_path: Path) -> None:
         """
+        The Redis instance is built once and shared.
+
         Second access returns the exact same Redis instance built during __init__, not a
         freshly-built one - there's only ever one live connection per CoreConfig.
 
@@ -481,7 +491,7 @@ class TestEnvProperty:
 
     def test_returns_env_instance_with_the_same_loaded_values(self, tmp_path: Path) -> None:
         """
-        env returns the same Env used internally, still able to read the loaded .env file.
+        Env returns the same Env used internally, still able to read the loaded .env file.
 
         :param tmp_path: pytest fixture - temporary directory holding the test's .env, used as base_dir.
         :return: None

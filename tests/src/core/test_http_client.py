@@ -7,6 +7,8 @@ exception) per request() call, letting each test script exactly the sequence Htt
 see. asyncio.sleep is also patched to a no-op, so retry backoff doesn't slow the suite down.
 """
 
+# ruff: noqa: PLR2004, S101
+
 import asyncio
 from typing import Self
 
@@ -144,7 +146,7 @@ def _no_real_sleep(monkeypatch: pytest.MonkeyPatch) -> None:
         :param _delay: The backoff delay HttpClient would otherwise have waited out.
         :return: None
         """
-        return None
+        return
 
     monkeypatch.setattr(target=asyncio, name="sleep", value=_instant_sleep)
 
@@ -223,9 +225,9 @@ class TestSuccessfulRequests:
         result: object = await client.get(url="http://x")
         assert result == {"a": 1}
 
-    async def test_get_sends_http_method_get_and_kwargs(self, fake_session: _FakeSession) -> None:
+    async def test_get_sends_http_method_get_and_params(self, fake_session: _FakeSession) -> None:
         """
-        get() dispatches HttpMethod.GET and forwards extra kwargs untouched.
+        get() dispatches HttpMethod.GET and forwards the query parameters.
 
         :param fake_session: The fake aiohttp session fixture.
         :return: None
@@ -236,11 +238,11 @@ class TestSuccessfulRequests:
         method, url, kwargs = fake_session.calls[0]
         assert method == HttpMethod.GET
         assert url == "http://x"
-        assert kwargs == {"params": {"q": "1"}}
+        assert kwargs == {"params": {"q": "1"}, "json": None, "data": None}
 
     async def test_post_sends_http_method_post(self, fake_session: _FakeSession) -> None:
         """
-        post() dispatches HttpMethod.POST.
+        post() dispatches HttpMethod.POST and forwards the body.
 
         :param fake_session: The fake aiohttp session fixture.
         :return: None
@@ -248,8 +250,9 @@ class TestSuccessfulRequests:
         client: HttpClient = HttpClient()
         fake_session.queue(_FakeResponse(status=200, body=b"{}"))
         await client.post(url="http://x", data="body")
-        method, _url, _kwargs = fake_session.calls[0]
+        method, _url, kwargs = fake_session.calls[0]
         assert method == HttpMethod.POST
+        assert kwargs == {"params": None, "json": None, "data": "body"}
 
 
 class TestHttpClientErrorOnBadStatus:

@@ -1,7 +1,11 @@
 """
+Unit tests for the callback data and FSM states.
+
 Unit tests for src/tgbot/misc/data_types.py (CityCallback, UnitsCallback) and
 src/tgbot/misc/fsm_states.py (WeatherSetupStates).
 """
+
+# ruff: noqa: PLR2004, S101
 
 import pytest
 
@@ -60,7 +64,7 @@ class TestWeatherSetupStates:
 
         :return: None
         """
-        assert [state.state for state in WeatherSetupStates.__all_states__] == [  # pylint: disable=no-member
+        assert [state.state for state in WeatherSetupStates.__all_states__] == [
             "WeatherSetupStates:wait_for_city",
             "WeatherSetupStates:wait_for_city_choice",
             "WeatherSetupStates:wait_for_units",

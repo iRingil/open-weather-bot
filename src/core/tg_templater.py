@@ -1,5 +1,6 @@
 """Module for rendering Jinja2 templates used to display messages to users."""
 
+from collections.abc import Mapping
 from contextvars import ContextVar, Token
 from decimal import Decimal
 from gettext import NullTranslations
@@ -23,7 +24,8 @@ class TgTemplater:
         :param templates_dir: Path to the folder containing Jinja2 templates.
         :param locale_dir: Path to the folder containing localization files.
         """
-        self._env: Environment = Environment(
+        # Telegram HTML: user values are escaped explicitly with |e, and keyboard templates are plain text
+        self._env: Environment = Environment(  # noqa: S701
             trim_blocks=True,
             lstrip_blocks=True,
             extensions=["jinja2.ext.i18n"],
@@ -32,7 +34,8 @@ class TgTemplater:
         )
         self._locale: Path = locale_dir
         self._translations: dict[str, NullTranslations] = {}
-        self._env.install_gettext_callables(  # type: ignore[attr-defined]  # pylint: disable=no-member
+        # Added to the environment at runtime by the jinja2.ext.i18n extension
+        self._env.install_gettext_callables(  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
             gettext=self._gettext, ngettext=self._ngettext
         )
         self._env.filters["group_digits"] = self._group_digits
@@ -77,7 +80,7 @@ class TgTemplater:
         return [folder.name for folder in self._locale.iterdir() if folder.is_dir()]
 
     @staticmethod
-    def _smart_trunc(html: str, max_len: int = 4096) -> str:
+    def _smart_trunc(html: str, max_len: int = 4096) -> str:  # noqa: C901
         """
         Trims the HTML string to the first unclosed tag if it exceeds max_len, or truncates plain text.
 
@@ -121,10 +124,9 @@ class TgTemplater:
         return html + suffix if not tag_stack else html[: tag_stack[0][1]] + suffix
 
     @staticmethod
-    def _group_digits(value: int | float | Decimal) -> str:
+    def _group_digits(value: float | Decimal) -> str:
         """
-        Jinja2 filter grouping a whole number's digits in 3s with underscores, e.g.
-        100000 -> "100_000".
+        Jinja2 filter grouping a whole number's digits in 3s with underscores, e.g. 100000 -> "100_000".
 
         Underscores, not spaces: a plain space is a normal line-break point, so Telegram happily
         wraps a long number (or a "min-max" range of them) mid-digit-group - underscores don't
@@ -137,7 +139,9 @@ class TgTemplater:
         sign: str = "-" if number < 0 else ""
         return f"{sign}{abs(number):,}".replace(",", "_")
 
-    async def render(self, tmpl: str, locale: str, data: dict | None = None, max_len: int = 4096) -> str:
+    async def render(
+        self, tmpl: str, locale: str, data: Mapping[str, object] | None = None, max_len: int = 4096
+    ) -> str:
         """
         Returns the rendered template, based on the passed data, truncated if necessary.
 
@@ -147,7 +151,7 @@ class TgTemplater:
         :param max_len: Maximum length of the rendered text (default: 4096).
         :return: Rendered template as string, truncated if longer than max_len.
         """
-        data_to_render: dict = data or {}
+        data_to_render: Mapping[str, object] = data or {}
         token: Token[str] = _locale_ctx.set(locale)
         try:
             rendered_data: str = await self._env.get_template(name=tmpl).render_async(**data_to_render)

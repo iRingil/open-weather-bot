@@ -1,4 +1,4 @@
-"""This module contains business logic for handling exceptions not caught by other functions."""
+"""Business logic for handling exceptions not caught by other functions."""
 
 from aiogram.types import CallbackQuery, ErrorEvent, Message
 from loguru import logger

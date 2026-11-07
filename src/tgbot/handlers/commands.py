@@ -1,4 +1,4 @@
-"""This module contains handlers of the '/about' and '/stop' commands."""
+"""Handlers of the '/about' and '/stop' commands."""
 
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message

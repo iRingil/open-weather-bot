@@ -4,16 +4,21 @@ Unit tests for src/tgbot/misc/keyboards.py (KeyboardManager).
 TgTemplater is an autospecced mock rendering "<template>|<locale>".
 """
 
+# ruff: noqa: S101
+
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, create_autospec
 
 import pytest
-from aiogram.types import InlineKeyboardMarkup, ReplyKeyboardMarkup
 
 from core.db.data_types import Units
 from core.tg_templater import TgTemplater
 from tgbot.misc.data_types import CityCallback, UnitsCallback
 from tgbot.misc.keyboards import KeyboardManager
 from weather.data_types import CityData
+
+if TYPE_CHECKING:
+    from aiogram.types import InlineKeyboardMarkup, ReplyKeyboardMarkup
 
 __all__: tuple = ()
 
@@ -52,11 +57,14 @@ class TestGeolocation:
         :return: None
         """
         markup: ReplyKeyboardMarkup = await kb.geolocation(locale="uk")
-        assert len(markup.keyboard) == 1 and len(markup.keyboard[0]) == 1
+        assert len(markup.keyboard) == 1
+        assert len(markup.keyboard[0]) == 1
         button = markup.keyboard[0][0]
         assert button.text == "kb_send_geolocation.jinja2|uk"
         assert button.request_location is True
-        assert markup.resize_keyboard and markup.one_time_keyboard and markup.selective
+        assert markup.resize_keyboard
+        assert markup.one_time_keyboard
+        assert markup.selective
 
 
 class TestCities:

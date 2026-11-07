@@ -1,8 +1,8 @@
-"""This module contains the scheduled weather update of every user."""
+"""The scheduled weather update of every user."""
 
 from asyncio import sleep
 from collections import defaultdict
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError, TelegramForbiddenError, TelegramNetworkError, TelegramRetryAfter
@@ -16,8 +16,10 @@ from core.tg_templater import TgTemplater
 from tgbot.config import Config
 from tgbot.misc.keyboards import KeyboardManager
 from tgbot.services.common import BaseService, PhotoSource
-from weather.data_types import CurrentWeatherData
 from weather.reporter import WeatherReporter
+
+if TYPE_CHECKING:
+    from weather.data_types import CurrentWeatherData
 
 __all__: tuple[str] = ("ForecastService",)
 
@@ -60,9 +62,9 @@ class ForecastService(BaseService):
     _MAX_ATTEMPTS: int = 3
     _NETWORK_RETRY_DELAY: float = 1
 
-    # pylint: disable=too-many-arguments
-    def __init__(
+    def __init__(  # noqa: PLR0913 - the services the scheduled update needs
         self,
+        *,
         config: Config,
         tmpl: TgTemplater,
         kb: KeyboardManager,
@@ -154,10 +156,6 @@ class ForecastService(BaseService):
         for _ in range(self._MAX_ATTEMPTS):
             try:
                 msg: Message = await self._send_photo(bot=self._bot, chat_id=user.user_id, caption=caption, photo=photo)
-                await self._db.save_dialog_id(user_id=user.user_id, dialog_id=msg.message_id)
-                await self._drop_previous_report(user=user)
-                await sleep(self._SEND_INTERVAL)
-                return msg
             except TelegramRetryAfter as e:
                 logger.warning(f"Flood control while updating user {user.user_id}, retrying in {e.retry_after}s")
                 await sleep(e.retry_after)
@@ -171,6 +169,11 @@ class ForecastService(BaseService):
             except TelegramAPIError as e:
                 logger.warning(f"Failed to update user {user.user_id}: {e.message}")
                 return None
+            else:
+                await self._db.save_dialog_id(user_id=user.user_id, dialog_id=msg.message_id)
+                await self._drop_previous_report(user=user)
+                await sleep(self._SEND_INTERVAL)
+                return msg
         return None
 
     async def _drop_previous_report(self, user: UserSettings) -> None:

@@ -1,4 +1,5 @@
-"""Typed data structures mirroring rows of the users table.
+"""
+Typed data structures mirroring rows of the users table.
 
 Kept in their own module, separate from the query layer, so a type can be imported without
 pulling in the query layer itself.

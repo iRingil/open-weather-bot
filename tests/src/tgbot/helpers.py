@@ -1,19 +1,20 @@
 """Builders shared by the tgbot tests."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import MagicMock
 
 from aiogram import Bot
 from aiogram.methods import TelegramMethod
-from aiogram.types import CallbackQuery, Chat, Location, Message, PhotoSize, User
+from aiogram.types import CallbackQuery, Chat, InaccessibleMessage, Location, Message, PhotoSize, User
 
 __all__: tuple[str, ...] = ("USER_ID", "make_call", "make_message", "telegram_method")
 
 USER_ID: int = 222
 
 
-def make_message(
+def make_message(  # noqa: PLR0913 - every field a test may set
+    *,
     message_id: int = 1,
     text: str | None = None,
     photo_id: str | None = None,
@@ -40,7 +41,7 @@ def make_message(
         ]
     message: Message = Message(
         message_id=message_id,
-        date=datetime.now(tz=timezone.utc),
+        date=datetime.now(tz=UTC),
         chat=Chat(id=USER_ID, type="private"),
         from_user=User(id=USER_ID, is_bot=False, first_name="Test", language_code=language_code),
         text=text,
@@ -50,7 +51,9 @@ def make_message(
     return message.as_(bot) if bot is not None else message
 
 
-def make_call(bot: Bot, message: Any = None, data: str = "x", language_code: str | None = "ru") -> CallbackQuery:
+def make_call(
+    bot: Bot, message: Message | InaccessibleMessage | None = None, data: str = "x", language_code: str | None = "ru"
+) -> CallbackQuery:
     """
     Builds a real CallbackQuery bound to a (mocked) bot.
 

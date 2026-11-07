@@ -6,7 +6,10 @@ methods that would reach Telegram) rather than mocks, since the filter only ever
 .from_user off them.
 """
 
-from datetime import datetime
+# ruff: noqa: S101
+
+from datetime import UTC, datetime
+
 from aiogram.types import CallbackQuery, Chat, Message, User
 
 from tgbot.misc.filters import UserIsAdmin
@@ -23,7 +26,7 @@ def _make_message(user_id: int | None) -> Message:
     :return: A Message usable as the "obj" argument to either filter.
     """
     from_user: User | None = User(id=user_id, is_bot=False, first_name="Test") if user_id is not None else None
-    return Message(message_id=1, date=datetime.now(), chat=Chat(id=1, type="private"), from_user=from_user)
+    return Message(message_id=1, date=datetime.now(UTC), chat=Chat(id=1, type="private"), from_user=from_user)
 
 
 def _make_callback_query(user_id: int) -> CallbackQuery:

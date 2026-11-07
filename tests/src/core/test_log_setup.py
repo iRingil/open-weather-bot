@@ -8,11 +8,13 @@ os.environ hermetic. Without it, a sink or handler left behind by one test would
 test that runs after it, in this file and beyond.
 """
 
+# ruff: noqa: PLR2004, S101
+
 import io
 import logging
 import sys
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 
 import pytest
 from loguru import logger
@@ -26,6 +28,8 @@ __all__: tuple = ()
 @pytest.fixture(autouse=True)
 def _restore_logging_state(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     """
+    Restores the stdlib and loguru logging state after a test.
+
     Restores the stdlib root logger's handlers/level, and clears every loguru sink added during
     the test.
 
@@ -56,8 +60,10 @@ class TestInterceptHandlerEmit:
 
     def test_forwards_a_known_level_and_formatted_message(self, captured_records: list) -> None:
         """
-        A levelname loguru already knows (e.g. WARNING) is forwarded by name, and the record's
-        message is formatted with its args before being logged.
+        A level loguru knows is forwarded by name, with the formatted message.
+
+        A levelname loguru already knows (e.g. WARNING) is forwarded by name, and the record's message is formatted
+        with its args before being logged.
 
         :param captured_records: Fixture capturing every record loguru receives.
         :return: None
@@ -78,6 +84,8 @@ class TestInterceptHandlerEmit:
 
     def test_falls_back_to_the_numeric_level_for_an_unregistered_levelname(self, captured_records: list) -> None:
         """
+        An unknown level name is logged by its number.
+
         A levelname loguru has no matching level for (logger.level() raises ValueError) is logged
         by its raw numeric levelno instead of raising out of emit().
 
@@ -99,6 +107,8 @@ class TestInterceptHandlerEmit:
 
     def test_forwards_exception_info(self, captured_records: list) -> None:
         """
+        exc_info is forwarded to loguru.
+
         A record carrying exc_info has the exception itself forwarded to loguru, not just the
         message text.
 
@@ -106,7 +116,7 @@ class TestInterceptHandlerEmit:
         :return: None
         """
         try:
-            raise ValueError("boom")
+            raise ValueError("boom")  # noqa: TRY301 - a real traceback for the record
         except ValueError:
             record: logging.LogRecord = logging.LogRecord(
                 name="some.library",
@@ -125,6 +135,8 @@ class TestInterceptHandlerEmit:
 
     def test_reports_the_real_callers_location_not_loggings_internals(self, captured_records: list) -> None:
         """
+        The depth skips the logging module's own frames.
+
         Depth is computed by skipping every frame inside the logging module itself, so the
         location loguru reports is this test function's own call site, not somewhere inside
         logging/__init__.py's Logger.warning/callHandlers/Handler.handle chain.
@@ -148,7 +160,7 @@ class TestLoggingManagerConsoleSink:
     """Tests for the console sink's level threshold and format, keyed on the debug flag."""
 
     @staticmethod
-    def _build(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, debug: bool) -> io.StringIO:
+    def _build(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, debug: bool) -> io.StringIO:  # noqa: FBT001
         """
         Constructs a LoggingManager with the console sink redirected to an in-memory stream.
 
@@ -193,6 +205,8 @@ class TestLoggingManagerConsoleSink:
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
         """
+        With debug=False INFO still reaches the console.
+
         With debug=False, an INFO-level message still reaches the console sink - the non-debug
         floor is INFO, not WARNING, so scheduled-job heartbeats stay visible without full DEBUG.
 
@@ -280,6 +294,8 @@ class TestLoggingManagerFileSink:
 
     def test_file_format_always_includes_source_location_regardless_of_debug(self, tmp_path: Path) -> None:
         """
+        The file sink always logs the code location.
+
         Unlike the console sink, the file sink's format always includes name/function/line, even
         with debug=False - unlike the console, the file isn't shown to an interactive user, so
         full detail costs nothing.
@@ -295,6 +311,8 @@ class TestLoggingManagerFileSink:
 
     def test_removes_previously_configured_sinks(self, tmp_path: Path) -> None:
         """
+        Earlier sinks are removed.
+
         Constructing a LoggingManager clears any sinks configured before it, so re-initializing
         logging doesn't duplicate output onto whatever was already listening.
 
@@ -313,6 +331,8 @@ class TestLoggingManagerRootLoggerWiring:
 
     def test_installs_intercept_handler_as_the_only_root_handler(self, tmp_path: Path) -> None:
         """
+        The stdlib root handlers are replaced with one InterceptHandler.
+
         The stdlib root logger's handlers are replaced with a single InterceptHandler instance,
         discarding whatever handlers (e.g. a library's own logging.basicConfig) were there before.
 
@@ -326,6 +346,8 @@ class TestLoggingManagerRootLoggerWiring:
 
     def test_sets_the_root_logger_level_to_debug_when_debug_is_true(self, tmp_path: Path) -> None:
         """
+        debug=True sets the stdlib root level to DEBUG.
+
         debug=True sets the stdlib root logger's level to DEBUG, so every stdlib record reaches
         InterceptHandler regardless of the level a third-party library logs it at.
 
@@ -337,6 +359,8 @@ class TestLoggingManagerRootLoggerWiring:
 
     def test_sets_the_root_logger_level_to_info_when_debug_is_false(self, tmp_path: Path) -> None:
         """
+        debug=False sets the stdlib root level to INFO.
+
         debug=False sets the stdlib root logger's level to INFO, matching the non-debug loguru
         floor set on the console/file sinks.
 
@@ -348,6 +372,8 @@ class TestLoggingManagerRootLoggerWiring:
 
     def test_silences_pillow_debug_noise_even_in_debug_mode(self, tmp_path: Path) -> None:
         """
+        Pillow's logger is floored at INFO.
+
         Pillow's own logger (a DEBUG line per PNG chunk on every forecast image) is floored at INFO
         regardless of debug=True, even though the root logger itself is set to DEBUG.
 
@@ -359,6 +385,8 @@ class TestLoggingManagerRootLoggerWiring:
 
     def test_stdlib_logging_is_forwarded_to_loguru(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         """
+        Stdlib logging records reach loguru.
+
         A message logged through the stdlib logging module - the way a third-party library
         (aiogram, apscheduler, asyncpg) would - is forwarded through InterceptHandler and
         reaches loguru's own console sink end-to-end.

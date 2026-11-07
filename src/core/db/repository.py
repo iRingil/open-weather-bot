@@ -1,4 +1,5 @@
-"""Typed query layer over PostgreSQL.
+"""
+Typed query layer over PostgreSQL.
 
 Wraps PostgresClient's protected _execute/_fetch/etc. primitives in typed methods that
 convert asyncpg.Record rows into this project's own types.
@@ -7,7 +8,7 @@ The schema is shared with the previous (aiogram 2) version of the bot and must s
 compatible with it: tables, columns and the api_request_counters month format are unchanged.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from asyncpg import Record
 
@@ -80,13 +81,15 @@ class Database(PostgresClient):
         :param user_id: Telegram user ID.
         :return: ID of the dialog message, or None if the user has no row.
         """
-        dialog_id: int | None = await self._fetchval("SELECT dialog_id FROM users WHERE id = $1", user_id)
-        return dialog_id
+        dialog_id: object = await self._fetchval("SELECT dialog_id FROM users WHERE id = $1", user_id)
+        return dialog_id if isinstance(dialog_id, int) else None
 
     async def save_user_settings(self, settings: UserSettings) -> None:
         """
-        Saves the result of the weather setup dialog, creating the user's row if it doesn't exist
-        (e.g. it was deleted by /stop in another window while the dialog was still open).
+        Saves the result of the weather setup dialog.
+
+        Creates the user's row if it doesn't exist (e.g. it was deleted by /stop in another window while the
+        dialog was still open).
 
         :param settings: The user's weather settings.
         :return: None
@@ -170,8 +173,8 @@ class Database(PostgresClient):
 
         :return: Number of users.
         """
-        users_count: int | None = await self._fetchval("SELECT COUNT(*) FROM users")
-        return users_count or 0
+        users_count: object = await self._fetchval("SELECT COUNT(*) FROM users")
+        return users_count if isinstance(users_count, int) else 0
 
     # endregion
 
@@ -183,7 +186,7 @@ class Database(PostgresClient):
 
         :return: Current month as 'YYYY.MM'.
         """
-        return datetime.now().strftime("%Y.%m")
+        return datetime.now(UTC).strftime("%Y.%m")
 
     async def get_api_counter_value(self) -> int:
         """
@@ -192,8 +195,8 @@ class Database(PostgresClient):
         :return: Number of requests.
         """
         query: str = "SELECT counter FROM api_request_counters WHERE month = $1"
-        requests_count: int | None = await self._fetchval(query, self._current_month())
-        return requests_count or 0
+        requests_count: object = await self._fetchval(query, self._current_month())
+        return requests_count if isinstance(requests_count, int) else 0
 
     async def increase_api_counter(self, count: int = 1) -> None:
         """

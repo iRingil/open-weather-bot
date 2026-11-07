@@ -1,4 +1,5 @@
-"""Unit tests for src/tgbot/config.py (Config).
+"""
+Unit tests for src/tgbot/config.py (Config).
 
 Config wraps a CoreConfig (see src/core/config.py) and reads its own extra keys off the same
 shared .env. Every test here builds a real, throwaway CoreConfig backed by its own temporary
@@ -10,15 +11,17 @@ never connects. Combined with tests/conftest.py's isolated_environ fixture, each
 regardless of run order.
 """
 
+# ruff: noqa: S101, S105, S106
+
 from pathlib import Path
 
 import pytest
 from environs import EnvError
 from redis.asyncio import Redis
 
+from core.config import CoreConfig
 from tgbot.config import Config
 from tgbot.misc.data_types import Paths, WebhookCredentials
-from core.config import CoreConfig
 
 __all__: tuple = ()
 
@@ -67,7 +70,7 @@ class TestAdmins:
 
     def test_forwards_admins_from_core(self, tmp_path: Path) -> None:
         """
-        admins returns exactly what the underlying CoreConfig.admins returns.
+        Admins returns exactly what the underlying CoreConfig.admins returns.
 
         :param tmp_path: pytest fixture - temporary directory to build the throwaway layout under.
         :return: None
@@ -81,6 +84,8 @@ class TestPaths:
 
     def test_composes_paths(self, tmp_path: Path) -> None:
         """
+        Paths are composed under base_dir.
+
         bot_logo/templates are composed under Config's own base_dir (templates as a sibling of
         it, matching the real tgbot/../templates layout).
 
@@ -104,7 +109,7 @@ class TestRedis:
 
     def test_forwards_redis_from_core(self, tmp_path: Path) -> None:
         """
-        redis returns exactly what the underlying CoreConfig.redis returns.
+        Redis returns exactly what the underlying CoreConfig.redis returns.
 
         :param tmp_path: pytest fixture - temporary directory to build the throwaway layout under.
         :return: None
@@ -180,7 +185,7 @@ class TestWebhook:
             wh_host="https://example.com",
             wh_path="hook",
             wh_token="secret-token",
-            app_host="0.0.0.0",
+            app_host="0.0.0.0",  # noqa: S104
             app_port=8080,
         )
 

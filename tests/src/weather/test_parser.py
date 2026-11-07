@@ -4,6 +4,8 @@ Unit tests for src/weather/parser.py (WeatherParser).
 Pure functions over dicts shaped like real OpenWeatherMap responses - no network, no mocks.
 """
 
+# ruff: noqa: PLR2004, S101
+
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -17,7 +19,7 @@ __all__: tuple = ()
 _TS: int = 1_700_000_000  # 2023-11-14 22:13:20 UTC
 
 
-def _current(**overrides: Any) -> dict[str, Any]:
+def _current(**overrides: object) -> dict[str, Any]:
     """
     Builds a current weather response.
 
@@ -74,7 +76,8 @@ class TestParseCity:
         )
         raw["local_names"] = {"en": "Kyiv"}
         city: CityData | None = WeatherParser.parse_city(raw_data=raw, lang="uk")
-        assert city is not None and city.name == "Kyiv"
+        assert city is not None
+        assert city.name == "Kyiv"
 
     @pytest.mark.parametrize("raw", [{"name": "X", "lat": 1, "lon": 2}, {"name": "X", "country": "UA", "lat": "a"}])
     def test_malformed_returns_none(self, raw: dict[str, Any]) -> None:
@@ -123,7 +126,8 @@ class TestParseCurrentWeather:
         :return: None
         """
         data: CurrentWeatherData | None = WeatherParser.parse_current_weather(raw_data=_current(snow={"1h": 1.5}))
-        assert data is not None and data.precipitation == 1.5
+        assert data is not None
+        assert data.precipitation == 1.5
 
     def test_no_precipitation_gust_or_visibility(self) -> None:
         """
@@ -174,7 +178,8 @@ class TestParseCurrentWeather:
         :return: None
         """
         data: CurrentWeatherData | None = WeatherParser.parse_current_weather(raw_data=_current(visibility=9000.4))
-        assert data is not None and data.visibility == 9000
+        assert data is not None
+        assert data.visibility == 9000
 
     @pytest.mark.parametrize(
         "raw",
@@ -191,6 +196,8 @@ class TestParseCurrentWeather:
     )
     def test_malformed_returns_none(self, raw: dict[str, Any]) -> None:
         """
+        Malformed data gives None.
+
         A missing required field, an empty list, a bad type or a value out of range gives None
         instead of raising.
 

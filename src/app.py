@@ -1,13 +1,16 @@
 """Main program module."""
 
 import asyncio
+from typing import TYPE_CHECKING, ClassVar
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode, UpdateType
-from aiogram.fsm.storage.redis import DefaultKeyBuilder, RedisStorage
+from aiogram.fsm.storage.base import DefaultKeyBuilder
+from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-from aiohttp.web import Application as AiohttpApp, run_app
+from aiohttp.web import Application as AiohttpApp
+from aiohttp.web import run_app
 from loguru import logger
 
 from core.config import CoreConfig
@@ -19,7 +22,6 @@ from core.tg_templater import TgTemplater
 from tgbot.config import Config
 from tgbot.handlers.main import MainHandler
 from tgbot.misc.bot_commands import BotCommands
-from tgbot.misc.data_types import WebhookCredentials
 from tgbot.misc.keyboards import KeyboardManager
 from tgbot.misc.middlewares import AntiFloodMiddleware
 from tgbot.services.forecast import ForecastService
@@ -27,7 +29,10 @@ from weather.client import WeatherAPI
 from weather.image import ForecastImage
 from weather.reporter import WeatherReporter
 
-__all__: tuple = ()
+if TYPE_CHECKING:
+    from tgbot.misc.data_types import WebhookCredentials
+
+__all__: tuple[str, ...] = ()
 
 
 class Application:
@@ -38,7 +43,7 @@ class Application:
         mode are restricted to these, so nothing the bot doesn't act on ever reaches it.
     """
 
-    _ALLOWED_UPDATES: list[str] = [UpdateType.MESSAGE, UpdateType.CALLBACK_QUERY]
+    _ALLOWED_UPDATES: ClassVar[list[str]] = [UpdateType.MESSAGE, UpdateType.CALLBACK_QUERY]
 
     def __init__(self, core: CoreConfig | None = None) -> None:
         """
@@ -136,7 +141,11 @@ class Application:
             setup_application(web_app, self._dp)
             run_app(app=web_app, host=webhook.app_host, port=webhook.app_port)
             return
-        asyncio.run(main=self._dp.start_polling(self._bot, allowed_updates=self._ALLOWED_UPDATES))
+        # aiogram's own signature has an untyped part (allowed_updates)
+        polling = self._dp.start_polling(  # pyright: ignore[reportUnknownMemberType]
+            self._bot, allowed_updates=self._ALLOWED_UPDATES
+        )
+        asyncio.run(main=polling)
 
 
 def main() -> None:
@@ -153,8 +162,8 @@ def main() -> None:
         application.run()
     except (KeyboardInterrupt, SystemExit):
         pass
-    except Exception as exc:
-        logger.critical(f"Unhandled error: {repr(exc)}")
+    except Exception as exc:  # noqa: BLE001 - last resort: log whatever stopped the bot
+        logger.critical(f"Unhandled error: {exc!r}")
     finally:
         logger.info("Application stopped!")
 

@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from math import log
-from typing import Any
 
 from babel.core import UnknownLocaleError
 from babel.dates import format_datetime
@@ -85,7 +84,7 @@ class WeatherFormatter:
             return format_datetime(datetime=time, format="d MMM HH:mm", locale=cls._FALLBACK_LOCALE)
 
     @classmethod
-    def build_context(cls, data: CurrentWeatherData, units: Units, city: str, lang: str) -> dict[str, Any]:
+    def build_context(cls, data: CurrentWeatherData, units: Units, city: str, lang: str) -> dict[str, object]:
         """
         Builds the template context of the current weather caption.
 

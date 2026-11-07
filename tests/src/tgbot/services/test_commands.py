@@ -5,6 +5,8 @@ Bot, Database, TgTemplater and KeyboardManager are autospecced mocks (see ../con
 asyncio.sleep is patched out so the temporary messages don't slow the suite down.
 """
 
+# ruff: noqa: S101, TID252
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -57,6 +59,8 @@ class TestStop:
 
     async def test_deletes_everything(self, service: CommandsService, bot: MagicMock, db: MagicMock) -> None:
         """
+        /stop deletes the user's data and dialog.
+
         The state is cleared, the command and the dialog message deleted, the user's row removed,
         and a "data deleted" notice is shown for 5 seconds.
 

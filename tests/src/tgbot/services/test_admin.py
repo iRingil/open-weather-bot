@@ -4,6 +4,8 @@ Unit tests for src/tgbot/services/admin.py (AdminService).
 Bot, Database, TgTemplater and KeyboardManager are autospecced mocks (see ../conftest.py).
 """
 
+# ruff: noqa: S101, TID252
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -33,8 +35,9 @@ class TestStats:
     """Tests AdminService.stats."""
 
     @pytest.mark.parametrize(("counter", "percent"), [(0, 0), (123_456, 12), (995_000, 100)])
-    async def test_renders_usage(
+    async def test_renders_usage(  # noqa: PLR0913 - fixtures and parameters
         self,
+        *,
         service: AdminService,
         bot: MagicMock,
         db: MagicMock,
@@ -43,6 +46,8 @@ class TestStats:
         percent: int,
     ) -> None:
         """
+        The statistics show the API usage and the user count.
+
         The statistics show the monthly API usage against the 1M limit (rounded percent) and
         the user count, then disappear after 15 seconds.
 

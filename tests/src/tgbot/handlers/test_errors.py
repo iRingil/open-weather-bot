@@ -12,8 +12,8 @@ from unittest.mock import AsyncMock
 import pytest
 from aiogram.types import ErrorEvent, Update
 
-from tgbot.handlers import errors as errors_module
 from tgbot.handlers.errors import ErrHandler
+from tgbot.services.errors import ErrService
 
 __all__: tuple = ()
 
@@ -37,7 +37,7 @@ def log_exception_fixture(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
     :return: The AsyncMock standing in for ErrService.log_exception.
     """
     mock: AsyncMock = AsyncMock(return_value=None)
-    monkeypatch.setattr(target=errors_module.ErrService, name="log_exception", value=mock)
+    monkeypatch.setattr(target=ErrService, name="log_exception", value=mock)
     return mock
 
 
@@ -48,13 +48,10 @@ class TestHandle:
         """
         handle() awaits ErrService.log_exception with the handler's own event, unchanged.
 
-        ErrHandler's constructor is typed against BaseHandler[Exception]'s stub, which doesn't
-        accept a real ErrorEvent - hence the type: ignore on construction below.
-
         :param log_exception: Fixture standing in for ErrService.log_exception.
         :return: None
         """
         event: ErrorEvent = _error_event(exception=RuntimeError("boom"))
-        handler: ErrHandler = ErrHandler(event=event)  # type: ignore[arg-type]
+        handler: ErrHandler = ErrHandler(event=event)
         await handler.handle()
         log_exception.assert_awaited_once_with(event=event)

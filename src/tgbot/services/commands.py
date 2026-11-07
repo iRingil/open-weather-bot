@@ -1,10 +1,14 @@
-"""This module contains business logic of the '/about' and '/stop' commands."""
+"""Business logic of the '/about' and '/stop' commands."""
 
-from aiogram import Bot
+from typing import TYPE_CHECKING
+
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from tgbot.services.common import BaseService
+
+if TYPE_CHECKING:
+    from aiogram import Bot
 
 __all__: tuple[str] = ("CommandsService",)
 
@@ -33,7 +37,7 @@ class CommandsService(BaseService):
         """
         await self._delete_user_msg(message=message)
         await self._send_temporary(
-            bot=message.bot,  # type: ignore [arg-type]
+            bot=self._bot_of(event=message),
             chat_id=message.chat.id,
             caption=await self._tmpl.render(tmpl=self._msg_about, locale=self._locale(user=message.from_user)),
             delay=self._ABOUT_TTL,
@@ -49,7 +53,7 @@ class CommandsService(BaseService):
         """
         await state.clear()
         await self._delete_user_msg(message=message)
-        bot: Bot = message.bot  # type: ignore [assignment]
+        bot: Bot = self._bot_of(event=message)
         user_id: int = message.chat.id
         await self._delete_msg(bot=bot, chat_id=user_id, msg_id=await self._db.get_dialog_id(user_id=user_id))
         await self._db.delete_user(user_id=user_id)

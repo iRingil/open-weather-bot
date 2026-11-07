@@ -7,12 +7,12 @@ tests/src/core/test_decorators.py uses for asyncio.sleep. The wrapped handler is
 spy (_HandlerSpy) rather than a mock, since it has no real external dependency of its own either.
 """
 
-# pylint: disable=protected-access
+# ruff: noqa: S101, SLF001
 
 from typing import Any
 
 import pytest
-from aiogram.types import TelegramObject
+from aiogram.types import TelegramObject, User
 
 from tgbot.misc import middlewares
 from tgbot.misc.middlewares import AntiFloodMiddleware
@@ -35,9 +35,7 @@ class _FakeClock:
         self.now: float = start
 
     def __call__(self) -> float:
-        """
-        :return: The current fake time.
-        """
+        """:return: The current fake time."""
         return self.now
 
     def advance(self, delta: float) -> None:
@@ -53,7 +51,7 @@ class _FakeClock:
 class _HandlerSpy:
     """An async callable standing in for the wrapped handler, recording every call and returning a fixed result."""
 
-    def __init__(self, result: Any = "handled") -> None:
+    def __init__(self, result: object = "handled") -> None:
         """
         Sets the value every call returns.
 
@@ -62,7 +60,7 @@ class _HandlerSpy:
         self._result: Any = result
         self.calls: list[tuple[Any, dict[str, Any]]] = []
 
-    async def __call__(self, event: Any, data: dict[str, Any]) -> Any:
+    async def __call__(self, event: object, data: dict[str, object]) -> object:
         """
         Records the call, then returns the scripted result.
 
@@ -74,28 +72,17 @@ class _HandlerSpy:
         return self._result
 
 
-class SimpleUser:
-    """A minimal stand-in for aiogram.types.User - the middleware only ever reads .id off it."""
-
-    # noinspection PyShadowingBuiltins
-    def __init__(self, id: int) -> None:  # pylint: disable=redefined-builtin
-        """
-        :param id: The Telegram user ID the middleware keys its rate limit by.
-        """
-        self.id: int = id
-
-
 def _user_data(user_id: int | None) -> dict[str, Any]:
     """
     Builds a data dict as the middleware would receive it from earlier middlewares.
 
-    :param user_id: The value to put in "event_from_user" (only .id is ever read), or None to
-        omit the key entirely, simulating an event with no resolvable user.
+    :param user_id: ID of the aiogram User to put in "event_from_user", or None to omit the key
+        entirely, simulating an event with no resolvable user.
     :return: A data dict suitable for passing to AntiFloodMiddleware.__call__.
     """
     if user_id is None:
         return {}
-    return {"event_from_user": SimpleUser(id=user_id)}
+    return {"event_from_user": User(id=user_id, is_bot=False, first_name="Test")}
 
 
 @pytest.fixture(name="clock")
@@ -134,8 +121,9 @@ def middleware_fixture() -> AntiFloodMiddleware:
 class TestNoResolvableUser:
     """Tests the middleware's behavior when data has no "event_from_user" to key the rate limit by."""
 
+    @pytest.mark.usefixtures("clock")
     async def test_calls_the_handler_regardless_of_call_count(
-        self, middleware: AntiFloodMiddleware, handler: _HandlerSpy, clock: _FakeClock
+        self, middleware: AntiFloodMiddleware, handler: _HandlerSpy
     ) -> None:
         """
         Without a user to track, every call is let through unconditionally, even past the normal limit.

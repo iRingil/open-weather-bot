@@ -5,8 +5,8 @@ from pathlib import Path
 from environs import Env, EnvError
 from redis.asyncio import Redis
 
-from tgbot.misc.data_types import Paths, WebhookCredentials
 from core.config import CoreConfig
+from tgbot.misc.data_types import Paths, WebhookCredentials
 
 __all__: tuple[str] = ("Config",)
 
@@ -82,7 +82,7 @@ class Config:
         try:
             return self._env.str(name="BOT_TOKEN")
         except EnvError as exc:
-            raise EnvError(f"BOT_TOKEN not found: {repr(exc)}") from exc
+            raise EnvError(f"BOT_TOKEN not found: {exc!r}") from exc
 
     @property
     def token(self) -> str:
@@ -111,7 +111,7 @@ class Config:
                 app_port=self._env.int(name="WEBAPP_PORT"),
             )
         except EnvError as exc:
-            raise EnvError(f"Webhook credentials not found in the .env file: {repr(exc)}") from exc
+            raise EnvError(f"Webhook credentials not found in the .env file: {exc!r}") from exc
 
     @property
     def webhook(self) -> WebhookCredentials | None:

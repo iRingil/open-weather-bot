@@ -5,14 +5,23 @@ Bot, Database, TgTemplater and KeyboardManager are autospecced mocks (see confte
 reaches Telegram or Postgres. Telegram's refusals are simulated with real aiogram exceptions.
 """
 
-# pylint: disable=protected-access
+# ruff: noqa: PLR2004, S101, SLF001, TID252
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from aiogram.exceptions import TelegramBadRequest
-from aiogram.types import InlineKeyboardMarkup, ReplyKeyboardMarkup
-from aiogram.types import BufferedInputFile, FSInputFile, InaccessibleMessage, InputMediaPhoto, Chat, Message, User
+from aiogram.types import (
+    BufferedInputFile,
+    Chat,
+    FSInputFile,
+    InaccessibleMessage,
+    InlineKeyboardMarkup,
+    InputMediaPhoto,
+    Message,
+    ReplyKeyboardMarkup,
+    User,
+)
 
 from tgbot.services.common import BaseService
 
@@ -75,6 +84,8 @@ class TestLogo:
 
     def test_uploads_file_until_remembered(self, service: BaseService, config: MagicMock) -> None:
         """
+        The logo is uploaded once, then reused by file_id.
+
         Without a cached file_id the logo is an FSInputFile of the configured path; once a sent
         message with it is remembered, its largest photo's file_id is used instead.
 
@@ -102,6 +113,28 @@ class TestLogo:
         service._remember_logo(sent=service._logo(), message=make_message(photo_id="first"))
         service._remember_logo(sent=FSInputFile("x"), message=make_message(photo_id="second"))
         assert BaseService._logo_file_id == "first"
+
+
+class TestBotOf:
+    """Tests BaseService._bot_of."""
+
+    def test_returns_the_bound_bot(self, bot: MagicMock) -> None:
+        """
+        A message bound to a bot gives that bot.
+
+        :param bot: The mocked Bot.
+        :return: None
+        """
+        assert BaseService._bot_of(event=make_message(bot=bot)) is bot
+
+    def test_unbound_event_raises(self) -> None:
+        """
+        An event not bound to a bot is a programming error.
+
+        :return: None
+        """
+        with pytest.raises(RuntimeError, match="not bound to a bot"):
+            BaseService._bot_of(event=make_message())
 
 
 class TestDeleteMsg:
@@ -228,7 +261,8 @@ class TestEditOrSendMsg:
         :return: None
         """
         msg = await service._edit_or_send_msg(bot=bot, chat_id=USER_ID, msg_id=50, caption="cap", reply_markup=_KB)
-        assert msg is not None and msg.message_id == 50
+        assert msg is not None
+        assert msg.message_id == 50
         bot.edit_message_caption.assert_awaited_once_with(
             chat_id=USER_ID, message_id=50, caption="cap", reply_markup=_KB
         )
@@ -245,7 +279,8 @@ class TestEditOrSendMsg:
         :return: None
         """
         msg = await service._edit_or_send_msg(bot=bot, chat_id=USER_ID, msg_id=50, caption="cap", photo="file_id")
-        assert msg is not None and msg.message_id == 50
+        assert msg is not None
+        assert msg.message_id == 50
         kwargs = bot.edit_message_media.await_args.kwargs
         assert kwargs["media"] == InputMediaPhoto(media="file_id", caption="cap")
         assert kwargs["message_id"] == 50
@@ -289,6 +324,8 @@ class TestEditOrSendMsg:
 
     async def test_other_bad_request_sends_new(self, service: BaseService, bot: MagicMock, db: MagicMock) -> None:
         """
+        Any other refusal sends a new dialog message.
+
         Any other refusal sends a new message (same photo), saves it as the dialog message and
         tries to delete the old one.
 
@@ -301,7 +338,8 @@ class TestEditOrSendMsg:
         msg = await service._edit_or_send_msg(
             bot=bot, chat_id=USER_ID, msg_id=50, caption="cap", photo="file_id", reply_markup=_KB
         )
-        assert msg is not None and msg.message_id == 100
+        assert msg is not None
+        assert msg.message_id == 100
         bot.send_photo.assert_awaited_once_with(
             chat_id=USER_ID, photo="file_id", caption="cap", reply_markup=_KB, disable_notification=True
         )
@@ -318,7 +356,8 @@ class TestEditOrSendMsg:
         :return: None
         """
         msg = await service._edit_or_send_msg(bot=bot, chat_id=USER_ID, msg_id=None, caption="cap")
-        assert msg is not None and msg.message_id == 100
+        assert msg is not None
+        assert msg.message_id == 100
         bot.edit_message_caption.assert_not_awaited()
         assert isinstance(bot.send_photo.await_args.kwargs["photo"], FSInputFile)
         db.save_dialog_id.assert_awaited_once_with(user_id=USER_ID, dialog_id=100)

@@ -5,7 +5,9 @@ WeatherAPI and ForecastImage are autospecced; captions are rendered by a real Tg
 project's own templates, in English (msgids are English, so no compiled catalogs are needed).
 """
 
-from datetime import datetime, timezone
+# ruff: noqa: S101
+
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, create_autospec
 
@@ -33,9 +35,9 @@ _CURRENT: CurrentWeatherData = CurrentWeatherData(
     pressure=1013,
     visibility=None,
     precipitation=None,
-    time=datetime(2026, 10, 21, 14, 5, tzinfo=timezone.utc),
-    sunrise=datetime(2026, 10, 21, 7, 2, tzinfo=timezone.utc),
-    sunset=datetime(2026, 10, 21, 18, 9, tzinfo=timezone.utc),
+    time=datetime(2026, 10, 21, 14, 5, tzinfo=UTC),
+    sunrise=datetime(2026, 10, 21, 7, 2, tzinfo=UTC),
+    sunset=datetime(2026, 10, 21, 18, 9, tzinfo=UTC),
 )
 _SETTINGS: UserSettings = UserSettings(
     user_id=1, dialog_id=2, lang="en", city="Kyiv", latitude=50.4, longitude=30.5, units=Units.METRIC
@@ -138,7 +140,8 @@ class TestCaption:
         caption: str = await reporter.caption(current=_CURRENT, city="Kyiv & Co", units=Units.METRIC, lang="en")
         assert caption.startswith("<b>Kyiv &amp; Co, 21 Oct 14:05</b>\n☀ clear &lt;sky&gt;\n")
         assert "🌡 <b>20°C</b>, feels like <b>19°C</b>" in caption
-        assert "gusts to" not in caption and "Visibility" not in caption
+        assert "gusts to" not in caption
+        assert "Visibility" not in caption
         assert caption.endswith("🌅 Sunrise: <b>07:02</b>  🌇 Sunset: <b>18:09</b>")
 
     async def test_failed_template_without_current_weather(self, reporter: WeatherReporter) -> None:
@@ -198,4 +201,5 @@ class TestReport:
         """
         api.get_forecast.return_value = None
         report: WeatherReport = await reporter.report(settings=_SETTINGS)
-        assert report.photo is None and report.caption
+        assert report.photo is None
+        assert report.caption

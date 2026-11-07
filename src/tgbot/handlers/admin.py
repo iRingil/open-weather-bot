@@ -1,4 +1,4 @@
-"""This module contains handlers for admin-related functionality."""
+"""Handlers for admin-related functionality."""
 
 from aiogram.types import Message
 

@@ -1,15 +1,15 @@
-"""This module contains business logic of the weather setup dialog."""
+"""Business logic of the weather setup dialog."""
 
 from asyncio import sleep
 from contextlib import suppress
-from typing import Any
+from typing import TYPE_CHECKING
 
-from aiogram import Bot
 from aiogram.enums import ChatAction
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import BufferedInputFile, CallbackQuery, InlineKeyboardMarkup, Message, ReplyKeyboardMarkup
 from loguru import logger
+from pydantic import TypeAdapter, ValidationError
 
 from core.db.data_types import Units, UserSettings
 from core.db.repository import Database
@@ -23,13 +23,21 @@ from weather.client import WeatherAPI
 from weather.data_types import CityData
 from weather.reporter import WeatherReport, WeatherReporter
 
+if TYPE_CHECKING:
+    from aiogram import Bot
+
 __all__: tuple[str] = ("DialogService",)
+
+# Found cities and the chosen one round-trip through the FSM storage (Redis) as JSON
+_CITIES: TypeAdapter[list[CityData]] = TypeAdapter(list[CityData])
+_CITY: TypeAdapter[CityData] = TypeAdapter(CityData)
 
 
 class DialogService(BaseService):
     """
-    The class implements the weather setup dialog: city (by name or location) -> one of the found
-    cities -> measurement units -> the first weather report.
+    The weather setup dialog.
+
+    City (by name or location) -> one of the found cities -> measurement units -> the first weather report.
 
     :cvar _msg_enter_city: Path to the "write the city name" template.
     :cvar _msg_city_not_found: Path to the "no city found" template.
@@ -48,9 +56,9 @@ class DialogService(BaseService):
     _SETUP_COMPLETE_TTL: float = 15
     _MAX_CITY_LENGTH: int = 72
 
-    # pylint: disable=too-many-arguments
-    def __init__(
+    def __init__(  # noqa: PLR0913 - the services a dialog step needs
         self,
+        *,
         config: Config,
         tmpl: TgTemplater,
         kb: KeyboardManager,
@@ -84,7 +92,7 @@ class DialogService(BaseService):
         await self._delete_user_msg(message=message)
         user_id: int = message.chat.id
         locale: str = self._locale(user=message.from_user)
-        bot: Bot = message.bot  # type: ignore [assignment]
+        bot: Bot = self._bot_of(event=message)
         old_dialog_id: int | None = await self._db.get_dialog_id(user_id=user_id)
         await self._db.delete_user(user_id=user_id)
         await self._replace_dialog(
@@ -111,7 +119,7 @@ class DialogService(BaseService):
         # Ignore further input while this search runs
         await state.set_state(WeatherSetupStates.wait_for_city_choice)
         await self._delete_user_msg(message=message)
-        bot: Bot = message.bot  # type: ignore [assignment]
+        bot: Bot = self._bot_of(event=message)
         user_id: int = message.chat.id
         locale: str = self._locale(user=message.from_user)
         await bot.send_chat_action(chat_id=user_id, action=ChatAction.TYPING)
@@ -154,7 +162,7 @@ class DialogService(BaseService):
             else await self._db.get_dialog_id(user_id=call.from_user.id)
         )
         await self._replace_dialog(
-            bot=call.bot,  # type: ignore [arg-type]
+            bot=self._bot_of(event=call),
             chat_id=call.from_user.id,
             old_msg_id=old_msg_id,
             caption=await self._tmpl.render(tmpl=self._msg_enter_city, locale=locale, data={"greeting": False}),
@@ -173,12 +181,15 @@ class DialogService(BaseService):
         :param state: The FSM context of the user.
         :return: None
         """
-        data: dict[str, Any] = await state.get_data()
-        cities: list[dict[str, Any]] = data.get("cities") or []
+        data: dict[str, object] = await state.get_data()
+        try:
+            cities: list[CityData] = _CITIES.validate_python(data.get("cities"))
+        except ValidationError:
+            cities = []
         if not 0 <= callback_data.index < len(cities):
             await self.select_another_city(call=call, state=state)
             return
-        await state.set_data({"city": cities[callback_data.index]})
+        await state.set_data({"city": cities[callback_data.index]._asdict()})
         await state.set_state(WeatherSetupStates.wait_for_units)
         locale: str = self._locale(user=call.from_user)
         await self._edit_or_send_callback(
@@ -196,13 +207,14 @@ class DialogService(BaseService):
         :param state: The FSM context of the user.
         :return: None
         """
-        data: dict[str, Any] = await state.get_data()
-        if "city" not in data:
+        data: dict[str, object] = await state.get_data()
+        try:
+            city: CityData = _CITY.validate_python(data.get("city"))
+        except ValidationError:
             await self.select_another_city(call=call, state=state)
             return
         await state.clear()
-        city: CityData = CityData(**data["city"])
-        bot: Bot = call.bot  # type: ignore [assignment]
+        bot: Bot = self._bot_of(event=call)
         user_id: int = call.from_user.id
         locale: str = self._locale(user=call.from_user)
         units: Units = callback_data.units
