@@ -1,7 +1,7 @@
 """
 Unit tests for src/tgbot/services/dialog.py (DialogService).
 
-The FSM context is a real one over aiogram's MemoryStorage, so state transitions and the stored
+The FSM context is a real one over the aiogram MemoryStorage, so state transitions and the stored
 city list are checked as they would be stored. Bot, Database, TgTemplater, KeyboardManager,
 WeatherAPI and WeatherReporter are autospecced mocks (see ../conftest.py).
 """

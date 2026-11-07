@@ -1,7 +1,7 @@
 """
 Unit tests for src/core/log_setup.py (InterceptHandler, LoggingManager).
 
-Both classes configure process-wide singletons - loguru's own sink registry and the stdlib
+Both classes configure process-wide singletons - the loguru sink registry and the stdlib
 logging module's root logger - so the autouse _restore_logging_state fixture below undoes those
 mutations after every test, the same way tests/conftest.py's isolated_environ fixture keeps
 os.environ hermetic. Without it, a sink or handler left behind by one test would leak into every
@@ -389,7 +389,7 @@ class TestLoggingManagerRootLoggerWiring:
 
         A message logged through the stdlib logging module - the way a third-party library
         (aiogram, apscheduler, asyncpg) would - is forwarded through InterceptHandler and
-        reaches loguru's own console sink end-to-end.
+        reaches the loguru console sink end-to-end.
 
         :param monkeypatch: pytest fixture used to redirect the console sink's stream.
         :param tmp_path: pytest fixture - temporary directory used as the log directory.

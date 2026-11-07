@@ -85,7 +85,7 @@ class TestGroupDigits:
 
         A whole number's digits are grouped in 3s from the right, separated by underscores (not
         spaces, which Telegram would happily wrap a long number across) - including one already
-        in scientific notation (e.g. asyncpg's NUMERIC decoding can hand back Decimal('1.000E+7')
+        in scientific notation (e.g. the asyncpg NUMERIC decoding can hand back Decimal('1.000E+7')
         for a plain 10000000).
 
         :param value: Input value (int or Decimal).
@@ -97,7 +97,7 @@ class TestGroupDigits:
 
 class TestSmartTrunc:
     """
-    Tests for _smart_trunc's HTML-aware truncation.
+    Tests for the HTML-aware truncation of _smart_trunc.
 
     Exercised directly since it's the most complex pure logic in this module.
     """

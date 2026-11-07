@@ -107,7 +107,7 @@ class TestHandleExcException:
         The failure is logged with a traceback.
 
         The failure is logged at ERROR level, naming the wrapped function and the exception, with a traceback
-        attached - via loguru's logger.exception, not a hand-built one.
+        attached - via the loguru logger.exception, not a hand-built one.
 
         :param captured_records: Fixture capturing every record loguru receives.
         :return: None

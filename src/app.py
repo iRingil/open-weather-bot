@@ -141,7 +141,7 @@ class Application:
             setup_application(web_app, self._dp)
             run_app(app=web_app, host=webhook.app_host, port=webhook.app_port)
             return
-        # aiogram's own signature has an untyped part (allowed_updates)
+        # The aiogram signature has an untyped part (allowed_updates)
         polling = self._dp.start_polling(  # pyright: ignore[reportUnknownMemberType]
             self._bot, allowed_updates=self._ALLOWED_UPDATES
         )

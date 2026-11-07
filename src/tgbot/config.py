@@ -63,7 +63,7 @@ class Config:
     @property
     def redis(self) -> Redis:
         """
-        Returns the shared Redis connection for aiogram's FSM storage.
+        Returns the shared Redis connection for the aiogram FSM storage.
 
         Forwards the shared connection rather than building its own, so there's only ever one
         live connection to Redis for the whole application.

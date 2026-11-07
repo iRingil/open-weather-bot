@@ -14,7 +14,7 @@ class ErrHandler(BaseHandler[ErrorEvent]):
     """
     Class for errors handlers that are not caught by other functions.
 
-    Based on BaseHandler[ErrorEvent], not aiogram's ErrorHandler: that one is typed as
+    Based on BaseHandler[ErrorEvent], not the aiogram ErrorHandler: that one is typed as
     BaseHandler[Exception], while error handlers actually receive an ErrorEvent.
     """
 
