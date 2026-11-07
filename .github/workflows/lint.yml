@@ -18,6 +18,9 @@ on:
       - 'tests/**'
       - 'pyproject.toml'
       - '.github/workflows/**'
+  # New advisories appear while the code stays unchanged
+  schedule:
+    - cron: '17 5 * * 1'
 
 jobs:
   lint:
@@ -29,12 +32,16 @@ jobs:
         with:
           python-version: "3.13"
       # basedpyright reads the project's packages from .venv (see [tool.basedpyright] in pyproject.toml).
-      # Ruff and basedpyright are installed globally on dev machines, so their versions are pinned here.
+      # Ruff, basedpyright and pip-audit are not project dependencies, so their versions are pinned here.
       - name: Install dependencies
         run: |
           python -m venv .venv
           .venv/bin/python -m pip install --upgrade pip
-          .venv/bin/pip install -r src/requirements-dev.txt ruff==0.17.4 basedpyright==1.40.2
+          .venv/bin/pip install -r src/requirements-dev.txt ruff==0.17.4 basedpyright==1.40.2 pip-audit==2.10.1
+      # Audits every installed package, transitive ones included - Dependabot only sees the requirements files
+      - name: pip-audit
+        run: |
+          .venv/bin/pip-audit --progress-spinner off
       - name: Ruff
         run: |
           .venv/bin/ruff check src tests
