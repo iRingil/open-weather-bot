@@ -16,8 +16,10 @@ import pytest
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State
-from aiogram.fsm.storage.base import StorageKey
+from aiogram.fsm.storage.base import DefaultKeyBuilder, StorageKey
+from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.types import CallbackQuery, Chat, Location, Message, Update, User
+from redis.asyncio import Redis
 
 import tgbot.handlers.main as main_module
 from core.db.data_types import Units
@@ -79,15 +81,20 @@ def services_fixture(monkeypatch: pytest.MonkeyPatch) -> dict[str, MagicMock]:
 
 
 @pytest.fixture(name="dp")
-def dp_fixture(services: dict[str, MagicMock]) -> Dispatcher:
+def dp_fixture(services: dict[str, MagicMock], redis: Redis) -> Dispatcher:
     """
-    A real Dispatcher (MemoryStorage FSM) with a fully-wired MainHandler, admins=[_ADMIN_ID].
+    A real Dispatcher with a fully-wired MainHandler, admins=[_ADMIN_ID].
+
+    Its FSM storage is the production one: RedisStorage on the test Redis (see tests/conftest.py).
 
     :param services: The mocked service instances (patched in before MainHandler builds them).
+    :param redis: The test Redis connection.
     :return: The Dispatcher.
     """
     assert services
-    dispatcher: Dispatcher = Dispatcher()
+    dispatcher: Dispatcher = Dispatcher(
+        storage=RedisStorage(redis=redis, key_builder=DefaultKeyBuilder(prefix="owb_fsm"))
+    )
     config: MagicMock = MagicMock()
     config.admins = [_ADMIN_ID]
     MainHandler(

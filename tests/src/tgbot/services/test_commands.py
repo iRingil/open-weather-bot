@@ -1,7 +1,8 @@
 """
 Unit tests for src/tgbot/services/commands.py (CommandsService).
 
-Bot, Database, TgTemplater and KeyboardManager are autospecced mocks (see ../conftest.py);
+Bot, Database, TgTemplater and KeyboardManager are autospecced mocks (see ../conftest.py), the FSM storage is
+the real RedisStorage on the test Redis (see tests/conftest.py);
 asyncio.sleep is patched out so the temporary messages don't slow the suite down.
 """
 
@@ -11,8 +12,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.storage.base import StorageKey
-from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.fsm.storage.base import DefaultKeyBuilder, StorageKey
+from aiogram.fsm.storage.redis import RedisStorage
+from redis.asyncio import Redis
 
 from tgbot.misc.fsm_states import WeatherSetupStates
 from tgbot.services.commands import CommandsService
@@ -57,7 +59,9 @@ class TestAbout:
 class TestStop:
     """Tests CommandsService.stop."""
 
-    async def test_deletes_everything(self, service: CommandsService, bot: MagicMock, db: MagicMock) -> None:
+    async def test_deletes_everything(
+        self, service: CommandsService, bot: MagicMock, db: MagicMock, redis: Redis
+    ) -> None:
         """
         /stop deletes the user's data and dialog.
 
@@ -67,10 +71,12 @@ class TestStop:
         :param service: The CommandsService under test.
         :param bot: The mocked Bot.
         :param db: The mocked Database.
+        :param redis: The test Redis connection.
         :return: None
         """
         state: FSMContext = FSMContext(
-            storage=MemoryStorage(), key=StorageKey(bot_id=1, chat_id=USER_ID, user_id=USER_ID)
+            storage=RedisStorage(redis=redis, key_builder=DefaultKeyBuilder(prefix="owb_fsm")),
+            key=StorageKey(bot_id=1, chat_id=USER_ID, user_id=USER_ID),
         )
         await state.set_state(WeatherSetupStates.wait_for_city)
         with patch("tgbot.services.common.sleep", new=AsyncMock()) as fake_sleep:

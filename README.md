@@ -1,3 +1,4 @@
+<!--suppress ALL -->
 <p align="center">
     <img src="https://repository-images.githubusercontent.com/559574279/ac1f8317-c07c-4c0f-a4e4-c49ae01237cd" alt="Open Weather Bot" width="640">
 </p>
@@ -148,6 +149,10 @@ ruff format src tests         # format
 basedpyright                  # type check (installed globally, reads the packages from .venv)
 pytest -c pyproject.toml tests --cov --cov-fail-under=100
 ```
+
+The database tests need a throwaway PostgreSQL (`127.0.0.1:5432`, database `test_db`, user `test_user` /
+`test_password`) and Redis (`127.0.0.1:6379`, user `test_user` / `test_password`, db 15) - see `tests/conftest.py`.
+CI starts both as service containers.
 
 ### Developers
 

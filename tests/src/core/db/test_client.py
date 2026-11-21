@@ -1,28 +1,31 @@
 """
-Unit tests for src/core/db/client.py (PostgresClient).
+Tests for src/core/db/client.py (PostgresClient).
 
-Pure connection-pool plumbing, no SQL of its own, unlike core.db.repository.Database. create_pool is monkeypatched at
-module level; Pool/Connection are autospecced - never a real database call.
+The DSN is checked as a plain string; the pool and the query primitives run against the test PostgreSQL
+(see tests/conftest.py), on the users table of the database fixture - a Database is a PostgresClient.
 """
 
 # ruff: noqa: PLR2004, S101, SLF001
 
-from unittest.mock import AsyncMock, MagicMock, create_autospec
+from typing import TYPE_CHECKING
 
 import pytest
-from asyncpg import Connection, Pool
+from asyncpg import Connection
 from pydantic import SecretStr
 
-import core.db.client as client_module
 from core.config import PostgresConfig
 from core.db.client import PostgresClient
+from core.db.repository import Database
+
+if TYPE_CHECKING:
+    from asyncpg import Pool, Record
 
 __all__: tuple = ()
 
 
-def _pg_config(*, use_socket: bool = False) -> PostgresConfig:
+def _pg_config(*, use_socket: bool) -> PostgresConfig:
     """
-    Builds a throwaway PostgresConfig.
+    Builds a throwaway PostgresConfig for the DSN tests - never connected to.
 
     :param use_socket: Whether to build a socket-based config or a host/port one.
     :return: The config under test.
@@ -48,31 +51,25 @@ def _pg_config(*, use_socket: bool = False) -> PostgresConfig:
     )
 
 
-def _connection() -> MagicMock:
+@pytest.fixture(name="client")
+def client_fixture(database: Database) -> PostgresClient:
     """
-    Builds an autospecced Connection.
+    The database fixture as a plain PostgresClient: connected to the test database, with empty tables.
 
-    Its .execute/.fetch/.fetchrow are AsyncMocks, signature-checked against the real class.
-
-    :return: The mocked Connection instance.
+    :param database: The Database fixture.
+    :return: The client.
     """
-    mock: MagicMock = create_autospec(spec=Connection, instance=True)
-    return mock
+    return database
 
 
-def _pool_yielding(conn: MagicMock) -> MagicMock:
+async def _insert_rows(conn: Connection) -> None:
     """
-    Builds an autospecced Pool whose acquire() async context manager yields the given connection.
+    Fills the users table with two rows.
 
-    :param conn: The connection acquire() should yield.
-    :return: The mocked Pool instance.
+    :param conn: The plain connection to the test database.
+    :return: None
     """
-    pool: MagicMock = create_autospec(spec=Pool, instance=True)
-    acquire_cm: MagicMock = MagicMock()
-    acquire_cm.__aenter__ = AsyncMock(return_value=conn)
-    acquire_cm.__aexit__ = AsyncMock(return_value=False)
-    pool.acquire = MagicMock(return_value=acquire_cm)
-    return pool
+    await conn.execute("INSERT INTO users (id, dialog_id) VALUES ($1, $2), ($3, $4)", 1, 10, 2, 20)
 
 
 class TestBuildDsn:
@@ -124,177 +121,126 @@ class TestBuildDsn:
 class TestGetPool:
     """Tests for PostgresClient._get_pool's lazy creation and caching."""
 
-    async def test_creates_and_caches_the_pool_on_first_call(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    async def test_creates_the_pool_lazily_and_reuses_it(self, pg_config: PostgresConfig) -> None:
         """
-        The first call creates and caches the pool.
+        No pool exists before the first call; the first call creates and caches it, later calls reuse it.
 
-        The first call has no cached pool, so it calls create_pool with the client's own DSN and
-        caches the result on self._pool.
-
-        :param monkeypatch: pytest's monkeypatch fixture.
+        :param pg_config: The test database configuration.
         :return: None
         """
-        fake_pool: MagicMock = create_autospec(spec=Pool, instance=True)
-        create_pool_mock: AsyncMock = AsyncMock(return_value=fake_pool)
-        monkeypatch.setattr(target=client_module, name="create_pool", value=create_pool_mock)
-        client: PostgresClient = PostgresClient(pg_config=_pg_config())
+        client: PostgresClient = PostgresClient(pg_config=pg_config)
+        assert client._pool is None
         pool: Pool = await client._get_pool()
-        assert pool is fake_pool
-        assert client._pool is fake_pool
-        create_pool_mock.assert_awaited_once_with(dsn=client._db_dsn)
+        assert client._pool is pool
+        assert await client._get_pool() is pool
+        await client._close()
 
-    async def test_reuses_the_cached_pool_on_a_later_call(self, monkeypatch: pytest.MonkeyPatch) -> None:
+
+class TestQueries:
+    """Tests for PostgresClient._execute / _fetch / _fetchrow / _fetchval."""
+
+    async def test_execute_changes_the_data(self, client: PostgresClient, pg_conn: Connection) -> None:
         """
-        A cached pool is reused.
+        _execute runs the command with its positional arguments bound.
 
-        A second call with an already-cached pool returns it directly, without calling
-        create_pool again.
-
-        :param monkeypatch: pytest's monkeypatch fixture.
+        :param client: The client under test.
+        :param pg_conn: The plain connection to the test database.
         :return: None
         """
-        create_pool_mock: AsyncMock = AsyncMock()
-        monkeypatch.setattr(target=client_module, name="create_pool", value=create_pool_mock)
-        client: PostgresClient = PostgresClient(pg_config=_pg_config())
-        cached_pool: MagicMock = create_autospec(spec=Pool, instance=True)
-        client._pool = cached_pool
-        pool: Pool = await client._get_pool()
-        assert pool is cached_pool
-        create_pool_mock.assert_not_awaited()
+        await _insert_rows(conn=pg_conn)
+        await client._execute("UPDATE users SET dialog_id = $2 WHERE id = $1", 2, 21)
+        assert await client._fetchval("SELECT dialog_id FROM users WHERE id = $1", 2) == 21
 
-
-class TestExecute:
-    """Tests for PostgresClient._execute."""
-
-    async def test_acquires_a_connection_and_executes_the_query(self) -> None:
+    async def test_fetch_returns_every_row(self, client: PostgresClient, pg_conn: Connection) -> None:
         """
-        _execute runs the query over a pooled connection.
+        _fetch returns every matching row as an asyncpg Record.
 
-        _execute acquires a connection from the pool and awaits conn.execute with the query and
-        positional args, returning nothing.
-
+        :param client: The client under test.
+        :param pg_conn: The plain connection to the test database.
         :return: None
         """
-        conn: MagicMock = _connection()
-        client: PostgresClient = PostgresClient(pg_config=_pg_config())
-        client._pool = _pool_yielding(conn=conn)
-        await client._execute("UPDATE t SET x = $2 WHERE id = $1", 1, "y")
-        conn.execute.assert_awaited_once_with("UPDATE t SET x = $2 WHERE id = $1", 1, "y")
+        await _insert_rows(conn=pg_conn)
+        rows: list[Record] = await client._fetch("SELECT id, dialog_id FROM users ORDER BY id")
+        assert [tuple(row) for row in rows] == [(1, 10), (2, 20)]
 
-
-class TestFetch:
-    """Tests for PostgresClient._fetch."""
-
-    async def test_acquires_a_connection_and_returns_every_row(self) -> None:
+    async def test_fetch_returns_an_empty_list_without_rows(self, client: PostgresClient) -> None:
         """
-        _fetch returns the rows fetched over a pooled connection.
+        A query matching no row gives an empty list.
 
-        _fetch acquires a connection from the pool, awaits conn.fetch with the query and
-        positional args, and returns its result as-is.
-
+        :param client: The client under test.
         :return: None
         """
-        conn: MagicMock = _connection()
-        rows: list[MagicMock] = [MagicMock(), MagicMock()]
-        conn.fetch = AsyncMock(return_value=rows)
-        client: PostgresClient = PostgresClient(pg_config=_pg_config())
-        client._pool = _pool_yielding(conn=conn)
-        result = await client._fetch("SELECT * FROM t WHERE id = $1", 1)
-        assert result is rows
-        conn.fetch.assert_awaited_once_with("SELECT * FROM t WHERE id = $1", 1)
+        assert await client._fetch("SELECT id FROM users") == []
 
-
-class TestFetchrow:
-    """Tests for PostgresClient._fetchrow."""
-
-    async def test_acquires_a_connection_and_returns_the_row(self) -> None:
+    async def test_fetchrow_returns_the_row(self, client: PostgresClient, pg_conn: Connection) -> None:
         """
-        _fetchrow returns the row fetched over a pooled connection.
+        _fetchrow returns the matching row, its columns accessible by name.
 
-        _fetchrow acquires a connection from the pool, awaits conn.fetchrow with the query and
-        positional args, and returns its result.
-
+        :param client: The client under test.
+        :param pg_conn: The plain connection to the test database.
         :return: None
         """
-        conn: MagicMock = _connection()
-        row: MagicMock = MagicMock()
-        conn.fetchrow = AsyncMock(return_value=row)
-        client: PostgresClient = PostgresClient(pg_config=_pg_config())
-        client._pool = _pool_yielding(conn=conn)
-        result = await client._fetchrow("SELECT * FROM t WHERE id = $1", 1)
-        assert result is row
-        conn.fetchrow.assert_awaited_once_with("SELECT * FROM t WHERE id = $1", 1)
+        await _insert_rows(conn=pg_conn)
+        row: Record | None = await client._fetchrow("SELECT id, dialog_id FROM users WHERE id = $1", 1)
+        assert row is not None
+        assert (row["id"], row["dialog_id"]) == (1, 10)
 
-    async def test_returns_none_when_no_row_matches(self) -> None:
+    async def test_fetchrow_returns_none_without_a_row(self, client: PostgresClient) -> None:
         """
-        A query matching no row returns None, exactly as conn.fetchrow itself reports it.
+        A query matching no row gives None.
 
+        :param client: The client under test.
         :return: None
         """
-        conn: MagicMock = _connection()
-        conn.fetchrow = AsyncMock(return_value=None)
-        client: PostgresClient = PostgresClient(pg_config=_pg_config())
-        client._pool = _pool_yielding(conn=conn)
-        result = await client._fetchrow("SELECT * FROM t WHERE id = $1", 999)
-        assert result is None
+        assert await client._fetchrow("SELECT id FROM users WHERE id = $1", 999) is None
 
-
-class TestFetchval:
-    """Tests for PostgresClient._fetchval."""
-
-    async def test_acquires_a_connection_and_returns_the_value(self) -> None:
+    async def test_fetchval_returns_the_first_column(self, client: PostgresClient, pg_conn: Connection) -> None:
         """
-        _fetchval returns the value fetched over a pooled connection.
+        _fetchval returns the first column of the first row.
 
-        _fetchval acquires a connection from the pool, awaits conn.fetchval with the query and
-        positional args, and returns its result.
-
+        :param client: The client under test.
+        :param pg_conn: The plain connection to the test database.
         :return: None
         """
-        conn: MagicMock = _connection()
-        conn.fetchval = AsyncMock(return_value=42)
-        client: PostgresClient = PostgresClient(pg_config=_pg_config())
-        client._pool = _pool_yielding(conn=conn)
-        result = await client._fetchval("SELECT counter FROM t WHERE month = $1", "2026.10")
-        assert result == 42
-        conn.fetchval.assert_awaited_once_with("SELECT counter FROM t WHERE month = $1", "2026.10")
+        await _insert_rows(conn=pg_conn)
+        assert await client._fetchval("SELECT COUNT(*) FROM users") == 2
 
-    async def test_returns_none_when_no_row_matches(self) -> None:
+    async def test_fetchval_returns_none_without_a_row(self, client: PostgresClient) -> None:
         """
-        A query matching no row returns None, exactly as conn.fetchval itself reports it.
+        A query matching no row gives None.
 
+        :param client: The client under test.
         :return: None
         """
-        conn: MagicMock = _connection()
-        conn.fetchval = AsyncMock(return_value=None)
-        client: PostgresClient = PostgresClient(pg_config=_pg_config())
-        client._pool = _pool_yielding(conn=conn)
-        result = await client._fetchval("SELECT counter FROM t WHERE month = $1", "1999.01")
-        assert result is None
+        assert await client._fetchval("SELECT dialog_id FROM users WHERE id = $1", 999) is None
 
 
 class TestClose:
     """Tests for PostgresClient._close."""
 
-    async def test_closes_and_clears_an_existing_pool(self) -> None:
+    async def test_closes_and_clears_an_existing_pool(self, pg_config: PostgresConfig) -> None:
         """
-        An existing pool is closed and self._pool is reset to None.
+        An open pool is closed and forgotten, so the next query opens a new one.
 
+        :param pg_config: The test database configuration.
         :return: None
         """
-        pool: MagicMock = create_autospec(spec=Pool, instance=True)
-        client: PostgresClient = PostgresClient(pg_config=_pg_config())
-        client._pool = pool
+        client: PostgresClient = PostgresClient(pg_config=pg_config)
+        pool: Pool = await client._get_pool()
         await client._close()
-        pool.close.assert_awaited_once_with()
+        assert pool.is_closing()
         assert client._pool is None
+        assert await client._fetchval("SELECT 1") == 1
+        assert client._pool is not pool
+        await client._close()
 
-    async def test_is_a_no_op_without_a_pool(self) -> None:
+    async def test_is_a_no_op_without_a_pool(self, pg_config: PostgresConfig) -> None:
         """
         Closing a client that never opened a pool does nothing and raises nothing.
 
+        :param pg_config: The test database configuration.
         :return: None
         """
-        client: PostgresClient = PostgresClient(pg_config=_pg_config())
+        client: PostgresClient = PostgresClient(pg_config=pg_config)
         await client._close()
         assert client._pool is None

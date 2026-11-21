@@ -1,9 +1,9 @@
 """
 Unit tests for src/tgbot/services/dialog.py (DialogService).
 
-The FSM context is a real one over the aiogram MemoryStorage, so state transitions and the stored
-city list are checked as they would be stored. Bot, Database, TgTemplater, KeyboardManager,
-WeatherAPI and WeatherReporter are autospecced mocks (see ../conftest.py).
+The FSM context is a real one over the aiogram RedisStorage on the test Redis (see tests/conftest.py), as in
+production, so state transitions and the city list are checked after their JSON round trip. Bot, Database,
+TgTemplater, KeyboardManager, WeatherAPI and WeatherReporter are autospecced mocks (see ../conftest.py).
 """
 
 # ruff: noqa: PLR2004, S101, TID252
@@ -14,9 +14,10 @@ import pytest
 from aiogram.enums import ChatAction
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.storage.base import StorageKey
-from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.fsm.storage.base import DefaultKeyBuilder, StorageKey
+from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.types import BufferedInputFile, Chat, FSInputFile, InaccessibleMessage, Location
+from redis.asyncio import Redis
 
 from core.db.data_types import Units, UserSettings
 from tgbot.misc.data_types import CityCallback, UnitsCallback
@@ -35,13 +36,15 @@ _LVIV: CityData = CityData(name="Львів", full_name="Львів, UA", latitu
 
 
 @pytest.fixture(name="state")
-def state_fixture() -> FSMContext:
+def state_fixture(redis: Redis) -> FSMContext:
     """
-    A real FSM context over MemoryStorage.
+    A real FSM context over RedisStorage, with the production key prefix.
 
+    :param redis: The test Redis connection.
     :return: The FSM context.
     """
-    return FSMContext(storage=MemoryStorage(), key=StorageKey(bot_id=1, chat_id=USER_ID, user_id=USER_ID))
+    storage: RedisStorage = RedisStorage(redis=redis, key_builder=DefaultKeyBuilder(prefix="owb_fsm"))
+    return FSMContext(storage=storage, key=StorageKey(bot_id=1, chat_id=USER_ID, user_id=USER_ID))
 
 
 @pytest.fixture(name="api")

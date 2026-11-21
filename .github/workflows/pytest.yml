@@ -22,6 +22,30 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Throwaway databases for the integration tests, with the credentials of the local WSL ones (tests/conftest.py)
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test_user -d test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:8
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     strategy:
       matrix:
         python-version: ["3.13"]
@@ -36,6 +60,11 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f src/requirements.txt ]; then pip install -r src/requirements.txt; fi
           if [ -f src/requirements-dev.txt ]; then pip install -r src/requirements-dev.txt; fi
+      # The same ACL as the local test user: every command but the dangerous ones, only db 15
+      - name: Create the Redis test user
+        run: >-
+          docker exec ${{ job.services.redis.id }} redis-cli ACL SETUSER test_user on '>test_password'
+          '~*' '&*' '+@all' '-@dangerous' '-select' '+select|15' '+flushdb'
       # src must stay 100% covered, lines and branches (see [tool.coverage] in pyproject.toml).
       - name: Test with pytest
         env:
