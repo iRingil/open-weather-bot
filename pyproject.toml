@@ -47,16 +47,20 @@ reportMissingTypeArgument = false
 
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
-python_files = ["tests/**/*.py"]
+pythonpath = ["src", "."]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-
 
 [tool.coverage.run]
 source = ["src"]
 branch = true
 
 [tool.coverage.report]
+# src/ directories without __init__.py are still counted in the report.
+include_namespace_packages = true
+# A file marked "# pragma: exclude file" (scripts run by hand or by the server only) counts as covered.
+exclude_also = ['\A(?s:.*# pragma: exclude file.*)\Z']
 show_missing = true
 skip_covered = true
