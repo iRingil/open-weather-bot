@@ -14,8 +14,8 @@
     <a href="https://pypi.org/project/Pillow/13.0.0/">
         <img src="https://img.shields.io/badge/Pillow-v13.0.0-informational" alt="Pillow version">
     </a>
-    <a href="https://pypi.org/project/aiogram/3.31.0/">
-        <img src="https://img.shields.io/badge/aiogram-v3.31.0-informational" alt="aiogram version">
+    <a href="https://pypi.org/project/aiogram/3.33.0/">
+        <img src="https://img.shields.io/badge/aiogram-v3.33.0-informational" alt="aiogram version">
     </a>
     <a href="https://pypi.org/project/aiohttp/3.14.5/">
         <img src="https://img.shields.io/badge/aiohttp-v3.14.5-informational" alt="aiohttp version">

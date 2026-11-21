@@ -37,7 +37,7 @@ jobs:
         run: |
           python -m venv .venv
           .venv/bin/python -m pip install --upgrade pip
-          .venv/bin/pip install -r src/requirements-dev.txt ruff==0.17.4 basedpyright==1.40.2 pip-audit==2.10.1
+          .venv/bin/pip install -r src/requirements-dev.txt ruff==0.17.6 basedpyright==1.40.2 pip-audit==2.10.1
       # Audits every installed package, transitive ones included - Dependabot only sees the requirements files
       - name: pip-audit
         run: |
