@@ -307,6 +307,25 @@ class TestRender:
         tmpl: TgTemplater = TgTemplater(templates_dir=templates_dir, locale_dir=tmp_path / "locales")
         assert await tmpl.render(tmpl="static.jinja2", locale="en") == "Nothing to see here."
 
+    async def test_escapes_data_and_keeps_the_markup(self, tmp_path: Path) -> None:
+        """
+        A passed value is escaped for Telegram HTML; the markup of the template and of the translation stays.
+
+        A city named "<3" would otherwise be taken for a tag and Telegram would reject the message.
+
+        :param tmp_path: pytest fixture - temporary directory for templates/locale dirs.
+        :return: None
+        """
+        templates_dir: Path = tmp_path / "templates"
+        locale_dir: Path = tmp_path / "locales"
+        _write_template(
+            templates_dir=templates_dir, name="city.jinja2", content="<b>{% trans %}City{% endtrans %}</b> {{ city }}"
+        )
+        _compile_translations(locale_dir=locale_dir, locale="ru", translations={"City": "<i>Gorod</i>"})
+        tmpl: TgTemplater = TgTemplater(templates_dir=templates_dir, locale_dir=locale_dir)
+        rendered: str = await tmpl.render(tmpl="city.jinja2", locale="ru", data={"city": '<3 & <a href="x">'})
+        assert rendered == "<b><i>Gorod</i></b> &lt;3 &amp; &lt;a href=&#34;x&#34;&gt;"
+
     async def test_translates_via_trans_block_for_the_given_locale(self, tmp_path: Path) -> None:
         """
         A {% trans %} block is translated using the requested locale's catalog.

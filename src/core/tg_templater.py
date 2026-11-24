@@ -24,8 +24,11 @@ class TgTemplater:
         :param templates_dir: Path to the folder containing Jinja2 templates.
         :param locale_dir: Path to the folder containing localization files.
         """
-        # Telegram HTML: user values are escaped explicitly with |e, and keyboard templates are plain text
-        self._env: Environment = Environment(  # noqa: S701
+        # Telegram HTML: every value passed to a template is escaped (a city named "<3" would otherwise be taken
+        # for a tag and Telegram would reject the message); the markup of the templates and translations is kept.
+        # Keyboard templates get no data, so their plain text is not affected
+        self._env: Environment = Environment(
+            autoescape=True,
             trim_blocks=True,
             lstrip_blocks=True,
             extensions=["jinja2.ext.i18n"],
